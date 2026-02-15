@@ -9,6 +9,7 @@ export default function TipStyleTodo() {
   const [activeListId, setActiveListId] = useState<string | null>(null);
   const [tasks, setTasks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [newTaskText, setNewTaskText] = useState(""); // This is the new line
 
   useEffect(() => {
     fetchLists();
@@ -51,12 +52,18 @@ export default function TipStyleTodo() {
     }
   };
 
-  const addNewTask = async () => {
-    if (!activeListId) return;
-    const text = window.prompt("Enter new task:");
-    if (text?.trim()) {
-      const { data } = await supabase.from('tasks').insert([{ content: text.trim(), list_id: activeListId }]).select();
-      if (data) setTasks([...tasks, ...data]);
+  const handleAddTask = async (e: React.FormEvent) => {
+    e.preventDefault(); 
+    if (!activeListId || !newTaskText.trim()) return;
+
+    const { data, error } = await supabase
+      .from('tasks')
+      .insert([{ content: newTaskText.trim(), list_id: activeListId }])
+      .select();
+
+    if (!error && data) {
+      setTasks([...tasks, ...data]);
+      setNewTaskText(""); // This clears the bar so you can type the next task immediately
     }
   };
 
@@ -98,9 +105,23 @@ export default function TipStyleTodo() {
 <h1 className="text-6xl md:text-8xl font-black uppercase tracking-tighter mb-4">
   OPP <span className="text-zinc-600 font-light tracking-widest text-4xl md:text-5xl ml-4">2026</span>
 </h1>
-      <button onClick={addNewTask} className="flex items-center gap-2 bg-white text-black px-6 py-4 rounded-xl font-black hover:bg-blue-400 transition-colors mb-12 uppercase tracking-tight">
-        <Plus size={24} strokeWidth={3} /> Add Task
-      </button>
+     <form onSubmit={handleAddTask} className="mb-12 max-w-3xl">
+        <div className="relative group">
+          <input
+            type="text"
+            value={newTaskText}
+            onChange={(e) => setNewTaskText(e.target.value)}
+            placeholder="ADD TO YOUR PLAN..."
+            className="w-full bg-zinc-900 border-2 border-zinc-800 text-white px-6 py-5 rounded-2xl font-bold text-xl focus:outline-none focus:border-blue-600 transition-all placeholder:text-zinc-700 uppercase tracking-tight"
+          />
+          <button 
+            type="submit"
+            className="absolute right-3 top-1/2 -translate-y-1/2 bg-white text-black p-3 rounded-xl hover:bg-blue-500 transition-colors"
+          >
+            <Plus size={24} strokeWidth={3} />
+          </button>
+        </div>
+      </form>
 
       {loading ? <Loader2 className="animate-spin text-blue-500" /> : (
         <section className="space-y-4 max-w-3xl">
