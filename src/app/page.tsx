@@ -95,7 +95,9 @@ export default function TipStyleTodo() {
           </button>
         </div>
       </header>
-
+<h1 className="text-6xl md:text-8xl font-black uppercase tracking-tighter mb-4">
+  OPP <span className="text-zinc-600 font-light tracking-widest text-4xl md:text-5xl ml-4">2026</span>
+</h1>
       <button onClick={addNewTask} className="flex items-center gap-2 bg-white text-black px-6 py-4 rounded-xl font-black hover:bg-blue-400 transition-colors mb-12 uppercase tracking-tight">
         <Plus size={24} strokeWidth={3} /> Add Task
       </button>

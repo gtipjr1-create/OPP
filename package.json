@@ -1,6 +1,4 @@
-{
-  "name": "2dolist",
-  "version": "0.1.0",
+{"name": "opp-2026",
   "private": true,
   "scripts": {
     "dev": "next dev",
