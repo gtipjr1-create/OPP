@@ -4,6 +4,20 @@ import { redirect } from 'next/navigation';
 
 import { createSupabaseServerClient } from '@/lib/supabaseServer';
 
+export async function whoAmI() {
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
+
+  return {
+    hasUser: !!user,
+    userId: user?.id ?? null,
+    error: error?.message ?? null,
+  };
+}
+
 export async function createTaskAction(formData: FormData) {
   const content = String(formData.get('content') ?? formData.get('title') ?? '').trim();
   const listId = String(formData.get('list_id') ?? '').trim();
@@ -18,6 +32,7 @@ export async function createTaskAction(formData: FormData) {
     data: { user },
     error,
   } = await supabase.auth.getUser();
+  console.log('SERVER getUser:', { hasUser: !!user, error: error?.message });
 
   if (error) {
     console.error('[createTaskAction] auth.getUser failed:', error.message);

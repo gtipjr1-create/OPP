@@ -1,16 +1,24 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
+import { whoAmI } from '@/features/tasks/actions';
 import { createSupabaseBrowserClient } from '@/lib/supabaseBrowser';
 
 const supabase = createSupabaseBrowserClient();
 
 export default function LoginPage() {
+  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSignup, setIsSignup] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+  const [whoAmIResult, setWhoAmIResult] = useState<{
+    hasUser: boolean;
+    userId: string | null;
+    error: string | null;
+  } | null>(null);
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
@@ -26,6 +34,8 @@ export default function LoginPage() {
     }
 
     setMsg('Success. Go back to the app.');
+    router.replace('/');
+    router.refresh();
   }
 
   return (
@@ -61,8 +71,24 @@ export default function LoginPage() {
         >
           Switch to {isSignup ? 'Sign in' : 'Sign up'}
         </button>
+        <button
+          type="button"
+          className="w-full py-3 border rounded-xl bg-zinc-900 border-zinc-800"
+          onClick={async () => {
+            const result = await whoAmI();
+            setWhoAmIResult(result);
+          }}
+        >
+          Who am I?
+        </button>
 
         {msg ? <p className="text-sm text-zinc-400">{msg}</p> : null}
+        {whoAmIResult ? (
+          <p className="text-sm text-zinc-400">
+            hasUser: {String(whoAmIResult.hasUser)} | userId: {whoAmIResult.userId ?? 'null'} | error:{' '}
+            {whoAmIResult.error ?? 'null'}
+          </p>
+        ) : null}
       </form>
     </main>
   );
