@@ -1,8 +1,9 @@
-import { createServerClient } from '@supabase/ssr';
-import { NextResponse, type NextRequest } from 'next/server';
+import { createServerClient } from "@supabase/ssr"
+import { NextResponse, type NextRequest } from "next/server"
 
 export async function middleware(request: NextRequest) {
-  const response = NextResponse.next({ request });
+  // Create an initial response that we will mutate with auth cookies
+  let response = NextResponse.next({ request })
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -10,33 +11,39 @@ export async function middleware(request: NextRequest) {
     {
       cookies: {
         get(name) {
-          return request.cookies.get(name)?.value;
+          return request.cookies.get(name)?.value
         },
         set(name, value, options) {
-          response.cookies.set({ name, value, ...options });
+          // Important: update BOTH the request cookies and the outgoing response cookies
+          request.cookies.set({ name, value, ...options })
+          response = NextResponse.next({ request })
+          response.cookies.set({ name, value, ...options })
         },
         remove(name, options) {
-          response.cookies.set({ name, value: '', ...options });
+          request.cookies.set({ name, value: "", ...options })
+          response = NextResponse.next({ request })
+          response.cookies.set({ name, value: "", ...options })
         },
       },
-    },
-  );
+    }
+  )
 
+  // This refreshes the session and sets cookies on `response` if needed
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await supabase.auth.getUser()
 
-  // If not logged in, force to /login (except when already on /login)
-  const isLogin = request.nextUrl.pathname.startsWith('/login');
+  const isLogin = request.nextUrl.pathname.startsWith("/login")
   if (!user && !isLogin) {
-    const url = request.nextUrl.clone();
-    url.pathname = '/login';
-    return NextResponse.redirect(url);
+    const url = request.nextUrl.clone()
+    url.pathname = "/login"
+    return NextResponse.redirect(url)
   }
 
-  return response;
+  // Return the response that contains any updated cookies
+  return response
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
-};
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+}
