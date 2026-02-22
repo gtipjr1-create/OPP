@@ -1,5 +1,6 @@
 'use server';
 
+import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 
 import { createSupabaseServerClient } from '@/lib/supabaseServer';
@@ -61,4 +62,6 @@ export async function createTaskAction(formData: FormData) {
     });
     throw new Error(insertError.message);
   }
+
+  revalidatePath('/');
 }

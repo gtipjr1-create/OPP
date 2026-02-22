@@ -127,6 +127,21 @@ export function useTasksFeature() {
     };
   }, [activeListId]);
 
+  const reloadActiveTasks = useCallback(async () => {
+    if (!activeListId) {
+      return;
+    }
+
+    try {
+      const data = await listTasks(activeListId);
+      setTasks(data);
+      setErrorMessage(null);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to load tasks.';
+      setErrorMessage(message);
+    }
+  }, [activeListId]);
+
   const selectList = useCallback(
     (listId: string) => {
       const selected = lists.find((list) => list.id === listId);
@@ -383,6 +398,7 @@ export function useTasksFeature() {
     listStatsById,
     errorMessage,
     activeTitle,
+    reloadActiveTasks,
     createNewList,
     addTask,
     toggleTask,

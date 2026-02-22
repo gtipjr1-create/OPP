@@ -5,6 +5,7 @@ import { GripVertical } from 'lucide-react';
 
 import { APP_CONFIG } from '@/config/app';
 
+import { createTaskAction } from '../actions';
 import { useTasksFeature } from '../useTasksFeature';
 
 type Priority = 'high' | 'normal' | 'low';
@@ -185,8 +186,8 @@ export default function TasksScreen() {
     listStatsById,
     errorMessage,
     activeTitle,
+    reloadActiveTasks,
     createNewList,
-    addTask,
     toggleTask,
     saveTitleEdit,
   } = useTasksFeature();
@@ -194,6 +195,7 @@ export default function TasksScreen() {
   const [selectedPriority, setSelectedPriority] = React.useState<Priority>('normal');
   const [orderedTaskIds, setOrderedTaskIds] = React.useState<string[]>([]);
   const [draggedTaskId, setDraggedTaskId] = React.useState<string | null>(null);
+  const [isPending, startTransition] = React.useTransition();
 
   const storageKey = React.useMemo(
     () => (activeListId ? `opp_task_order_${activeListId}` : null),
@@ -536,7 +538,31 @@ export default function TasksScreen() {
             <div className="mb-4">
               <div className="text-xs font-semibold tracking-[0.25em] text-white/50">WORK STACK</div>
 
-              <div className="mt-3 flex items-center gap-3 rounded-2xl border border-white/10 bg-black/30 px-4 py-3">
+              <form
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  if (!activeListId || !newTaskText.trim()) {
+                    return;
+                  }
+
+                  const formData = new FormData();
+                  formData.set('list_id', activeListId);
+                  formData.set('content', withPriorityTag(newTaskText, selectedPriority));
+
+                  startTransition(async () => {
+                    await createTaskAction(formData);
+                    setNewTaskText('');
+                    await reloadActiveTasks();
+                  });
+                }}
+                className="mt-3 flex items-center gap-3 rounded-2xl border border-white/10 bg-black/30 px-4 py-3"
+              >
+                <input type="hidden" name="list_id" value={activeListId ?? ''} />
+                <input
+                  type="hidden"
+                  name="content"
+                  value={withPriorityTag(newTaskText, selectedPriority)}
+                />
                 <input
                   value={newTaskText}
                   disabled={!canEdit}
@@ -545,19 +571,16 @@ export default function TasksScreen() {
                   className="min-h-[48px] flex-1 bg-transparent text-base outline-none placeholder:text-white/40"
                 />
                 <button
-                  type="button"
-                  disabled={!canEdit}
-                  onClick={() => {
-                    void addTask(withPriorityTag(newTaskText, selectedPriority));
-                  }}
+                  type="submit"
+                  disabled={!canEdit || !newTaskText.trim() || isPending}
                   className={[
                     'min-h-[44px] rounded-xl px-4 py-2 text-sm font-semibold',
                     canEdit ? 'bg-white text-black hover:opacity-90' : 'bg-white/20 text-white/50',
                   ].join(' ')}
                 >
-                  Add
+                  {isPending ? 'Adding...' : 'Add'}
                 </button>
-              </div>
+              </form>
               <div className="mt-2 flex items-center gap-2">
                 {(['high', 'normal', 'low'] as Priority[]).map((priority) => (
                   <button
