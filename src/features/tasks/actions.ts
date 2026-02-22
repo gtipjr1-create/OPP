@@ -51,6 +51,14 @@ export async function createTaskAction(formData: FormData) {
   });
 
   if (insertError) {
+    console.error('[createTaskAction] insert failed:', {
+      message: insertError.message,
+      details: (insertError as { details?: string }).details,
+      hint: (insertError as { hint?: string }).hint,
+      code: (insertError as { code?: string }).code,
+      listId,
+      userId: user.id,
+    });
     throw new Error(insertError.message);
   }
 }
