@@ -195,7 +195,6 @@ export default function TasksScreen() {
   const [selectedPriority, setSelectedPriority] = React.useState<Priority>('normal');
   const [orderedTaskIds, setOrderedTaskIds] = React.useState<string[]>([]);
   const [draggedTaskId, setDraggedTaskId] = React.useState<string | null>(null);
-  const [isPending, startTransition] = React.useTransition();
 
   const storageKey = React.useMemo(
     () => (activeListId ? `opp_task_order_${activeListId}` : null),
@@ -539,21 +538,16 @@ export default function TasksScreen() {
               <div className="text-xs font-semibold tracking-[0.25em] text-white/50">WORK STACK</div>
 
               <form
-                onSubmit={(event) => {
-                  event.preventDefault();
+                action={async (formData) => {
                   if (!activeListId || !newTaskText.trim()) {
                     return;
                   }
 
-                  const formData = new FormData();
                   formData.set('list_id', activeListId);
                   formData.set('content', withPriorityTag(newTaskText, selectedPriority));
-
-                  startTransition(async () => {
-                    await createTaskAction(formData);
-                    setNewTaskText('');
-                    await reloadActiveTasks();
-                  });
+                  await createTaskAction(formData);
+                  setNewTaskText('');
+                  await reloadActiveTasks();
                 }}
                 className="mt-3 flex items-center gap-3 rounded-2xl border border-white/10 bg-black/30 px-4 py-3"
               >
@@ -572,13 +566,13 @@ export default function TasksScreen() {
                 />
                 <button
                   type="submit"
-                  disabled={!canEdit || !newTaskText.trim() || isPending}
+                  disabled={!canEdit || !newTaskText.trim()}
                   className={[
                     'min-h-[44px] rounded-xl px-4 py-2 text-sm font-semibold',
                     canEdit ? 'bg-white text-black hover:opacity-90' : 'bg-white/20 text-white/50',
                   ].join(' ')}
                 >
-                  {isPending ? 'Adding...' : 'Add'}
+                  Add
                 </button>
               </form>
               <div className="mt-2 flex items-center gap-2">
