@@ -58,6 +58,21 @@ export async function listTasks(listId: string): Promise<TaskRow[]> {
   return (data ?? []) as TaskRow[];
 }
 
+export async function listTasksForLists(listIds: string[]): Promise<TaskRow[]> {
+  if (listIds.length === 0) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from('tasks')
+    .select('*')
+    .in('list_id', listIds)
+    .order('created_at', { ascending: false });
+
+  assertNoError(error);
+  return (data ?? []) as TaskRow[];
+}
+
 export async function createList(title: string): Promise<ListRow> {
   const userId = await getRequiredUserId();
 

@@ -7,6 +7,7 @@ import {
   createTask,
   formatDefaultListTitle,
   listLists,
+  listTasksForLists,
   listTasks,
   removeList,
   removeTask,
@@ -15,6 +16,45 @@ import {
   setTaskDone,
 } from './service';
 import type { ListRow, TaskRow } from './types';
+
+type ListStats = {
+  totalTasks: number;
+  completedTasks: number;
+  completionPct: number;
+  modifiedAt: string;
+};
+
+function buildStatsMap(lists: ListRow[], allTasks: TaskRow[]): Record<string, ListStats> {
+  const tasksByListId = new Map<string, TaskRow[]>();
+  for (const task of allTasks) {
+    const bucket = tasksByListId.get(task.list_id);
+    if (bucket) {
+      bucket.push(task);
+    } else {
+      tasksByListId.set(task.list_id, [task]);
+    }
+  }
+
+  const stats: Record<string, ListStats> = {};
+  for (const list of lists) {
+    const tasks = tasksByListId.get(list.id) ?? [];
+    const total = tasks.length;
+    const completed = tasks.filter((task) => task.is_done).length;
+    const completionPct = total > 0 ? Math.round((completed / total) * 100) : 0;
+    const newestTaskDate = tasks
+      .map((task) => task.created_at)
+      .sort((a, b) => (a > b ? -1 : 1))[0];
+
+    stats[list.id] = {
+      totalTasks: total,
+      completedTasks: completed,
+      completionPct,
+      modifiedAt: newestTaskDate ?? list.created_at,
+    };
+  }
+
+  return stats;
+}
 
 export function useTasksFeature() {
   const [lists, setLists] = useState<ListRow[]>([]);
@@ -26,18 +66,23 @@ export function useTasksFeature() {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [titleEdit, setTitleEdit] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [listStatsById, setListStatsById] = useState<Record<string, ListStats>>({});
 
   useEffect(() => {
     let cancelled = false;
 
     listLists()
-      .then((data) => {
+      .then(async (data) => {
         if (cancelled) {
           return;
         }
 
         setErrorMessage(null);
         setLists(data);
+        const tasksForLists = await listTasksForLists(data.map((list) => list.id));
+        if (!cancelled) {
+          setListStatsById(buildStatsMap(data, tasksForLists));
+        }
         if (data.length > 0) {
           setActiveListId((previous) => previous ?? data[0].id);
           setTitleEdit(data[0].title);
@@ -102,6 +147,15 @@ export function useTasksFeature() {
     try {
       const created = await createList(nextTitle);
       setLists((previous) => [created, ...previous]);
+      setListStatsById((previous) => ({
+        ...previous,
+        [created.id]: {
+          totalTasks: 0,
+          completedTasks: 0,
+          completionPct: 0,
+          modifiedAt: created.created_at,
+        },
+      }));
       setActiveListId(created.id);
       setTasks([]);
       setEditingTaskId(null);
@@ -114,12 +168,12 @@ export function useTasksFeature() {
     }
   }, []);
 
-  const addTask = useCallback(async () => {
+  const addTask = useCallback(async (contentOverride?: string) => {
     if (!activeListId) {
       return;
     }
 
-    const content = newTaskText.trim();
+    const content = (contentOverride ?? newTaskText).trim();
     if (!content) {
       return;
     }
@@ -127,6 +181,25 @@ export function useTasksFeature() {
     try {
       const created = await createTask(activeListId, content);
       setTasks((previous) => [created, ...previous]);
+      setListStatsById((previous) => {
+        const current = previous[activeListId] ?? {
+          totalTasks: 0,
+          completedTasks: 0,
+          completionPct: 0,
+          modifiedAt: created.created_at,
+        };
+        const nextTotal = current.totalTasks + 1;
+        const nextCompleted = current.completedTasks + (created.is_done ? 1 : 0);
+        return {
+          ...previous,
+          [activeListId]: {
+            totalTasks: nextTotal,
+            completedTasks: nextCompleted,
+            completionPct: nextTotal > 0 ? Math.round((nextCompleted / nextTotal) * 100) : 0,
+            modifiedAt: created.created_at,
+          },
+        };
+      });
       setNewTaskText('');
       setErrorMessage(null);
     } catch (error) {
@@ -136,6 +209,10 @@ export function useTasksFeature() {
   }, [activeListId, newTaskText]);
 
   const toggleTask = useCallback(async (taskId: string, currentStatus: boolean) => {
+    if (!activeListId) {
+      return;
+    }
+
     try {
       await setTaskDone(taskId, !currentStatus);
       setTasks((previous) =>
@@ -143,23 +220,67 @@ export function useTasksFeature() {
           task.id === taskId ? { ...task, is_done: !currentStatus } : task,
         ),
       );
+      setListStatsById((previous) => {
+        const current = previous[activeListId];
+        if (!current) {
+          return previous;
+        }
+        const nextCompleted = current.completedTasks + (!currentStatus ? 1 : -1);
+        return {
+          ...previous,
+          [activeListId]: {
+            ...current,
+            completedTasks: nextCompleted,
+            completionPct:
+              current.totalTasks > 0 ? Math.round((nextCompleted / current.totalTasks) * 100) : 0,
+            modifiedAt: new Date().toISOString(),
+          },
+        };
+      });
       setErrorMessage(null);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to toggle task.';
       setErrorMessage(message);
     }
-  }, []);
+  }, [activeListId]);
 
   const deleteTask = useCallback(async (taskId: string) => {
+    if (!activeListId) {
+      return;
+    }
+
     try {
+      const taskToDelete = tasks.find((task) => task.id === taskId);
       await removeTask(taskId);
       setTasks((previous) => previous.filter((task) => task.id !== taskId));
+      if (taskToDelete) {
+        setListStatsById((previous) => {
+          const current = previous[activeListId];
+          if (!current) {
+            return previous;
+          }
+          const nextTotal = Math.max(0, current.totalTasks - 1);
+          const nextCompleted =
+            current.completedTasks - (taskToDelete.is_done ? 1 : 0);
+          return {
+            ...previous,
+            [activeListId]: {
+              ...current,
+              totalTasks: nextTotal,
+              completedTasks: Math.max(0, nextCompleted),
+              completionPct:
+                nextTotal > 0 ? Math.round((Math.max(0, nextCompleted) / nextTotal) * 100) : 0,
+              modifiedAt: new Date().toISOString(),
+            },
+          };
+        });
+      }
       setErrorMessage(null);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to delete task.';
       setErrorMessage(message);
     }
-  }, []);
+  }, [activeListId, tasks]);
 
   const saveTaskEdit = useCallback(async (taskId: string, nextText: string) => {
     const content = nextText.trim();
@@ -226,6 +347,11 @@ export function useTasksFeature() {
           }
           return updated;
         });
+        setListStatsById((previous) => {
+          const next = { ...previous };
+          delete next[listId];
+          return next;
+        });
         setErrorMessage(null);
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Failed to delete session.';
@@ -254,6 +380,7 @@ export function useTasksFeature() {
     setIsEditingTitle,
     titleEdit,
     setTitleEdit,
+    listStatsById,
     errorMessage,
     activeTitle,
     createNewList,

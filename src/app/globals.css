@@ -3,6 +3,12 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --state-active: #60a5fa;
+  --state-completed: #34d399;
+  --state-archived: #94a3b8;
+  --priority-high: #f87171;
+  --priority-normal: #60a5fa;
+  --priority-low: #9ca3af;
 }
 
 @theme inline {
@@ -22,7 +28,7 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
   overflow-x: hidden;
   touch-action: pan-y;
   overscroll-behavior-y: none;
