@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React from 'react';
 import { GripVertical } from 'lucide-react';
@@ -184,7 +184,6 @@ export default function TasksScreen() {
     titleEdit,
     setTitleEdit,
     listStatsById,
-    errorMessage,
     activeTitle,
     reloadActiveTasks,
     createNewList,
@@ -193,6 +192,7 @@ export default function TasksScreen() {
   } = useTasksFeature();
   const [isLocked, setIsLocked] = React.useState(false);
   const [selectedPriority, setSelectedPriority] = React.useState<Priority>('normal');
+  const [addTaskError, setAddTaskError] = React.useState<string | null>(null);
   const [orderedTaskIds, setOrderedTaskIds] = React.useState<string[]>([]);
   const [draggedTaskId, setDraggedTaskId] = React.useState<string | null>(null);
 
@@ -543,11 +543,19 @@ export default function TasksScreen() {
                     return;
                   }
 
-                  formData.set('list_id', activeListId);
-                  formData.set('content', withPriorityTag(newTaskText, selectedPriority));
-                  await createTaskAction(formData);
-                  setNewTaskText('');
-                  await reloadActiveTasks();
+                  try {
+                    setAddTaskError(null);
+                    formData.set('list_id', activeListId);
+                    formData.set('content', withPriorityTag(newTaskText, selectedPriority));
+                    await createTaskAction(formData);
+                    setNewTaskText('');
+                    await reloadActiveTasks();
+                  } catch (error) {
+                    const message = error instanceof Error ? error.message : 'Could not create task';
+                    setAddTaskError(
+                      process.env.NODE_ENV === 'development' ? message : 'Could not create task',
+                    );
+                  }
                 }}
                 className="mt-3 flex items-center gap-3 rounded-2xl border border-white/10 bg-black/30 px-4 py-3"
               >
@@ -560,7 +568,12 @@ export default function TasksScreen() {
                 <input
                   value={newTaskText}
                   disabled={!canEdit}
-                  onChange={(event) => setNewTaskText(event.target.value)}
+                  onChange={(event) => {
+                    setNewTaskText(event.target.value);
+                    if (addTaskError) {
+                      setAddTaskError(null);
+                    }
+                  }}
                   placeholder="Add task...  (use @6pm or @6:30pm, #high)"
                   className="min-h-[48px] flex-1 bg-transparent text-base outline-none placeholder:text-white/40"
                 />
@@ -597,7 +610,7 @@ export default function TasksScreen() {
                   </button>
                 ))}
               </div>
-              {errorMessage ? <p className="mt-3 text-sm text-red-300">{errorMessage}</p> : null}
+              {addTaskError ? <p className="mt-3 text-sm text-red-300">{addTaskError}</p> : null}
             </div>
 
             <div className="space-y-5">
@@ -757,3 +770,4 @@ export default function TasksScreen() {
     </div>
   );
 }
+
