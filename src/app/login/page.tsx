@@ -2,7 +2,9 @@
 
 import { useState } from 'react';
 
-import { supabase } from '@/lib/supabase';
+import { createSupabaseBrowserClient } from '@/lib/supabaseBrowser';
+
+const supabase = createSupabaseBrowserClient();
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
