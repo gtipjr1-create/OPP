@@ -12,7 +12,7 @@ export async function createTaskAction(formData: FormData) {
     return;
   }
 
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
 
   const {
     data: { user },
