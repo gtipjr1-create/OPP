@@ -1,6 +1,7 @@
-import { supabase } from '@/lib/supabase';
-
+import { createSupabaseBrowserClient } from '@/lib/supabaseBrowser';
 import type { ListRow, TaskRow } from './types';
+
+const supabase = createSupabaseBrowserClient();
 
 function assertNoError(error: { message: string } | null): void {
   if (error) {
