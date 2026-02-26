@@ -5,7 +5,7 @@ import { GripVertical } from 'lucide-react';
 
 import { APP_CONFIG } from '@/config/app';
 
-import { createTaskAction } from '../actions';
+import { createTaskAction, reorderTaskPositionsAction } from '../actions';
 import { useTasksFeature } from '../useTasksFeature';
 
 type Priority = 'high' | 'normal' | 'low';
@@ -193,13 +193,11 @@ export default function TasksScreen() {
   const [isLocked, setIsLocked] = React.useState(false);
   const [selectedPriority, setSelectedPriority] = React.useState<Priority>('normal');
   const [addTaskError, setAddTaskError] = React.useState<string | null>(null);
+  const [newSessionError, setNewSessionError] = React.useState<string | null>(null);
+  const [isScheduleOpen, setIsScheduleOpen] = React.useState(false);
   const [orderedTaskIds, setOrderedTaskIds] = React.useState<string[]>([]);
   const [draggedTaskId, setDraggedTaskId] = React.useState<string | null>(null);
-
-  const storageKey = React.useMemo(
-    () => (activeListId ? `opp_task_order_${activeListId}` : null),
-    [activeListId],
-  );
+  const orderedTaskIdsRef = React.useRef<string[]>([]);
 
   const tasks: Task[] = React.useMemo(
     () =>
@@ -215,39 +213,12 @@ export default function TasksScreen() {
   );
 
   React.useEffect(() => {
-    if (!storageKey) {
-      return;
-    }
-
-    try {
-      const raw = window.localStorage.getItem(storageKey);
-      if (!raw) {
-        return;
-      }
-      const parsed = JSON.parse(raw) as string[];
-      if (Array.isArray(parsed)) {
-        setOrderedTaskIds(parsed);
-      }
-    } catch {
-      // Ignore malformed client storage and continue with fresh ordering.
-    }
-  }, [storageKey]);
-
-  React.useEffect(() => {
-    setOrderedTaskIds((previous) => {
-      const availableIds = new Set(tasks.map((task) => task.id));
-      const kept = previous.filter((id) => availableIds.has(id));
-      const appended = tasks.map((task) => task.id).filter((id) => !kept.includes(id));
-      return [...kept, ...appended];
-    });
+    setOrderedTaskIds(tasks.map((task) => task.id));
   }, [tasks]);
 
   React.useEffect(() => {
-    if (!storageKey) {
-      return;
-    }
-    window.localStorage.setItem(storageKey, JSON.stringify(orderedTaskIds));
-  }, [orderedTaskIds, storageKey]);
+    orderedTaskIdsRef.current = orderedTaskIds;
+  }, [orderedTaskIds]);
 
   const orderedTasks = React.useMemo(() => {
     if (orderedTaskIds.length === 0) {
@@ -306,8 +277,9 @@ export default function TasksScreen() {
 
   const moveTask = React.useCallback((sourceId: string, targetId: string) => {
     if (sourceId === targetId) {
-      return;
+      return null;
     }
+    let nextOrder: string[] | null = null;
     setOrderedTaskIds((previous) => {
       const next = [...previous];
       const sourceIndex = next.indexOf(sourceId);
@@ -317,9 +289,30 @@ export default function TasksScreen() {
       }
       const [moved] = next.splice(sourceIndex, 1);
       next.splice(targetIndex, 0, moved);
+      nextOrder = next;
       return next;
     });
+    return nextOrder;
   }, []);
+
+  const persistTaskOrder = React.useCallback(
+    async (orderedIds: string[]) => {
+      if (!activeListId || orderedIds.length === 0) {
+        return;
+      }
+
+      try {
+        await reorderTaskPositionsAction(activeListId, orderedIds);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Could not save task order';
+        setAddTaskError(
+          process.env.NODE_ENV === 'development' ? message : 'Could not save task order',
+        );
+        await reloadActiveTasks();
+      }
+    },
+    [activeListId, reloadActiveTasks],
+  );
 
   const moveTaskFromTouchPoint = React.useCallback(
     (sourceId: string, clientX: number, clientY: number) => {
@@ -338,6 +331,7 @@ export default function TasksScreen() {
       setIsLocked(false);
       setNewTaskText('');
       setSelectedPriority('normal');
+      setNewSessionError(null);
       setDraggedTaskId(null);
       selectList(listId);
     },
@@ -354,7 +348,7 @@ export default function TasksScreen() {
 
               <div className="mt-3">
                 <div className="flex items-end gap-3">
-                  <h1 className="text-6xl font-extrabold tracking-tight md:text-7xl">{APP_CONFIG.shortName}</h1>
+                  <h1 className="text-5xl font-extrabold tracking-tight sm:text-6xl md:text-7xl">{APP_CONFIG.shortName}</h1>
                   <span className="mb-1 text-2xl font-black text-blue-400/90">{APP_CONFIG.yearMark}</span>
                 </div>
                 {isEditingTitle ? (
@@ -459,37 +453,59 @@ export default function TasksScreen() {
               </div>
             </div>
 
-            <div className="mt-2 flex w-full flex-wrap items-center justify-center gap-2 lg:w-[260px] lg:justify-end">
+            <div className="mt-2 flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-center lg:w-[260px] lg:justify-end">
               <button
                 type="button"
-                onClick={() => {
-                  void createNewList();
+                onClick={async () => {
+                  setNewSessionError(null);
+                  try {
+                    await createNewList();
+                  } catch (error) {
+                    const message = error instanceof Error ? error.message : 'Could not create session';
+                    setNewSessionError(
+                      process.env.NODE_ENV === 'development' ? message : 'Could not create session',
+                    );
+                  }
                 }}
-                className="rounded-2xl border border-white/10 bg-white px-4 py-3 text-sm font-semibold text-black hover:opacity-90"
+                className="min-h-[44px] w-full rounded-2xl border border-white/10 bg-white px-4 py-3 text-sm font-semibold text-black hover:opacity-90 sm:w-auto"
               >
                 New Session
               </button>
               <button
                 type="button"
-                className="rounded-2xl border border-white/20 bg-transparent px-4 py-3 text-sm font-semibold text-white/80 hover:bg-white/5 hover:text-white"
+                className="min-h-[44px] w-full rounded-2xl border border-white/20 bg-transparent px-4 py-3 text-sm font-semibold text-white/80 hover:bg-white/5 hover:text-white sm:w-auto"
               >
                 Duplicate
               </button>
               <button
                 type="button"
-                className="rounded-2xl border border-white/10 bg-transparent px-4 py-3 text-sm font-semibold text-white/55 hover:bg-white/5 hover:text-white/80"
+                className="min-h-[44px] w-full rounded-2xl border border-white/10 bg-transparent px-4 py-3 text-sm font-semibold text-white/55 hover:bg-white/5 hover:text-white/80 sm:w-auto"
               >
                 Export
               </button>
             </div>
           </div>
+          {newSessionError ? (
+            <div className="mt-4 rounded-2xl border border-red-400/45 bg-red-500/15 px-4 py-3 text-sm text-red-100">
+              New Session failed: {newSessionError}
+            </div>
+          ) : null}
         </header>
 
         <div className="grid gap-5 md:grid-cols-[208px_1fr]">
-          <aside className="rounded-3xl border border-white/10 bg-white/5 p-4">
-            <div className="mb-3 text-xs font-semibold tracking-[0.25em] text-white/50">SCHEDULE</div>
+          <aside className="order-2 rounded-3xl border border-white/10 bg-white/5 p-4 md:order-1">
+            <div className="mb-3 flex items-center justify-between">
+              <div className="text-xs font-semibold tracking-[0.25em] text-white/50">SCHEDULE</div>
+              <button
+                type="button"
+                onClick={() => setIsScheduleOpen((value) => !value)}
+                className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-semibold text-white/75 md:hidden"
+              >
+                {isScheduleOpen ? 'Hide' : `Show (${scheduled})`}
+              </button>
+            </div>
 
-            <div className="space-y-2">
+            <div className={['space-y-2', isScheduleOpen ? 'block' : 'hidden md:block'].join(' ')}>
               {hours.map((hour) => {
                 const label = formatHour(hour);
                 const isCurrentHour = hour === currentHour;
@@ -533,7 +549,7 @@ export default function TasksScreen() {
             </div>
           </aside>
 
-          <main className="rounded-3xl border border-white/10 bg-white/5 p-4">
+          <main className="order-1 rounded-3xl border border-white/10 bg-white/5 p-4 md:order-2">
             <div className="mb-4">
               <div className="text-xs font-semibold tracking-[0.25em] text-white/50">WORK STACK</div>
 
@@ -557,7 +573,7 @@ export default function TasksScreen() {
                     );
                   }
                 }}
-                className="mt-3 flex items-center gap-3 rounded-2xl border border-white/10 bg-black/30 px-4 py-3"
+                className="mt-3 flex flex-col gap-3 rounded-2xl border border-white/10 bg-black/30 px-4 py-3 sm:flex-row sm:items-center"
               >
                 <input type="hidden" name="list_id" value={activeListId ?? ''} />
                 <input
@@ -575,20 +591,20 @@ export default function TasksScreen() {
                     }
                   }}
                   placeholder="Add task...  (use @6pm or @6:30pm, #high)"
-                  className="min-h-[48px] flex-1 bg-transparent text-base outline-none placeholder:text-white/40"
+                  className="min-h-[48px] w-full flex-1 bg-transparent text-base outline-none placeholder:text-white/40"
                 />
                 <button
                   type="submit"
                   disabled={!canEdit || !newTaskText.trim()}
                   className={[
-                    'min-h-[44px] rounded-xl px-4 py-2 text-sm font-semibold',
+                    'min-h-[44px] w-full rounded-xl px-4 py-2 text-sm font-semibold sm:w-auto',
                     canEdit ? 'bg-white text-black hover:opacity-90' : 'bg-white/20 text-white/50',
                   ].join(' ')}
                 >
                   Add
                 </button>
               </form>
-              <div className="mt-2 flex items-center gap-2">
+              <div className="mt-2 flex flex-wrap items-center gap-2">
                 {(['high', 'normal', 'low'] as Priority[]).map((priority) => (
                   <button
                     key={priority}
@@ -639,7 +655,10 @@ export default function TasksScreen() {
                         }}
                         onDrop={() => {
                           if (draggedTaskId) {
-                            moveTask(draggedTaskId, task.id);
+                            const nextOrder = moveTask(draggedTaskId, task.id);
+                            if (nextOrder) {
+                              void persistTaskOrder(nextOrder);
+                            }
                           }
                         }}
                       >
@@ -701,10 +720,12 @@ export default function TasksScreen() {
                               }
                             }}
                             onTouchEnd={() => {
+                              void persistTaskOrder(orderedTaskIdsRef.current);
                               setDraggedTaskId(null);
                             }}
                             aria-label="Drag to reorder task"
                             className="cursor-grab rounded-lg border border-white/10 bg-white/5 p-1.5 text-white/45 hover:bg-white/10 hover:text-white/70 active:cursor-grabbing touch-none select-none"
+                            style={{ touchAction: 'none' }}
                           >
                             <GripVertical size={14} />
                           </button>

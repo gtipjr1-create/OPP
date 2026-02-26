@@ -180,6 +180,7 @@ export function useTasksFeature() {
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to create session.';
       setErrorMessage(message);
+      throw error instanceof Error ? error : new Error(message);
     }
   }, []);
 

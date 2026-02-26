@@ -53,7 +53,8 @@ export async function listTasks(listId: string): Promise<TaskRow[]> {
     .from('tasks')
     .select('*')
     .eq('list_id', listId)
-    .order('created_at', { ascending: false });
+    .order('position', { ascending: true })
+    .order('created_at', { ascending: true });
 
   assertNoError(error);
   return (data ?? []) as TaskRow[];
@@ -89,10 +90,20 @@ export async function createList(title: string): Promise<ListRow> {
 
 export async function createTask(listId: string, content: string): Promise<TaskRow> {
   const userId = await getRequiredUserId();
+  const { data: highestPositionTask, error: positionError } = await supabase
+    .from('tasks')
+    .select('position')
+    .eq('list_id', listId)
+    .order('position', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  assertNoError(positionError);
+  const nextPosition = Number(highestPositionTask?.position ?? 0) + 1;
 
   const { data, error } = await supabase
     .from('tasks')
-    .insert([{ content, list_id: listId, user_id: userId }])
+    .insert([{ content, list_id: listId, user_id: userId, position: nextPosition }])
     .select()
     .single();
 

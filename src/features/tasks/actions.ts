@@ -45,10 +45,25 @@ export async function createTaskAction(formData: FormData) {
     redirect('/login');
   }
 
+  const { data: highestPositionTask, error: positionError } = await supabase
+    .from('tasks')
+    .select('position')
+    .eq('list_id', listId)
+    .order('position', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (positionError) {
+    throw new Error(positionError.message);
+  }
+
+  const nextPosition = Number(highestPositionTask?.position ?? 0) + 1;
+
   const { error: insertError } = await supabase.from('tasks').insert({
     user_id: user.id,
     list_id: listId,
     content,
+    position: nextPosition,
   });
 
   if (insertError) {
@@ -61,6 +76,82 @@ export async function createTaskAction(formData: FormData) {
       userId: user.id,
     });
     throw new Error(insertError.message);
+  }
+
+  revalidatePath('/');
+}
+
+export async function reorderTaskPositionsAction(listId: string, orderedTaskIds: string[]) {
+  const normalizedListId = listId.trim();
+  const dedupedOrderedTaskIds = Array.from(
+    new Set(orderedTaskIds.map((id) => id.trim()).filter((id) => id.length > 0)),
+  );
+
+  if (!normalizedListId || dedupedOrderedTaskIds.length === 0) {
+    return;
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError) {
+    throw new Error(authError.message);
+  }
+
+  if (!user) {
+    redirect('/login');
+  }
+
+  const { data: currentTasks, error: listTasksError } = await supabase
+    .from('tasks')
+    .select('id')
+    .eq('list_id', normalizedListId)
+    .order('position', { ascending: true })
+    .order('created_at', { ascending: true });
+
+  if (listTasksError) {
+    throw new Error(listTasksError.message);
+  }
+
+  const existingIds = (currentTasks ?? []).map((task) => task.id);
+  if (existingIds.length === 0) {
+    return;
+  }
+
+  const existingIdSet = new Set(existingIds);
+  const knownOrderedIds = dedupedOrderedTaskIds.filter((id) => existingIdSet.has(id));
+  const missingIds = existingIds.filter((id) => !knownOrderedIds.includes(id));
+  const fullOrder = [...knownOrderedIds, ...missingIds];
+
+  for (let index = 0; index < fullOrder.length; index += 1) {
+    const taskId = fullOrder[index];
+    const tempPosition = -1 * (index + 1);
+    const { error } = await supabase
+      .from('tasks')
+      .update({ position: tempPosition })
+      .eq('id', taskId)
+      .eq('list_id', normalizedListId);
+
+    if (error) {
+      throw new Error(error.message);
+    }
+  }
+
+  for (let index = 0; index < fullOrder.length; index += 1) {
+    const taskId = fullOrder[index];
+    const nextPosition = index + 1;
+    const { error } = await supabase
+      .from('tasks')
+      .update({ position: nextPosition })
+      .eq('id', taskId)
+      .eq('list_id', normalizedListId);
+
+    if (error) {
+      throw new Error(error.message);
+    }
   }
 
   revalidatePath('/');

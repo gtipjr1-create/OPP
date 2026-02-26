@@ -9,5 +9,6 @@ export interface TaskRow {
   list_id: string;
   content: string;
   is_done: boolean;
+  position: number;
   created_at: string;
 }
