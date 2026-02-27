@@ -392,6 +392,7 @@ export default function TasksScreen() {
   const handleDragEnd = React.useCallback(
     async (event: DragEndEvent) => {
       const { active, over } = event;
+      console.log('[DND] drag end', { activeId: active.id, overId: over?.id });
       setActiveDragId(null);
 
       if (!over) {
@@ -416,9 +417,10 @@ export default function TasksScreen() {
       console.log('Reordered IDs:', taskIdsArray);
       orderedTaskIdsRef.current = reordered;
       setOrderedTaskIds(reordered);
+      console.log('[DND] persisting order', { listId: activeListId, orderedIds: reordered });
       await persistTaskOrder(reordered);
     },
-    [persistTaskOrder],
+    [activeListId, persistTaskOrder],
   );
 
   return (
