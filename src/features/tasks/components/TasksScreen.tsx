@@ -412,6 +412,8 @@ export default function TasksScreen() {
       }
 
       const reordered = arrayMove(previous, oldIndex, newIndex);
+      const taskIdsArray = reordered;
+      console.log('Reordered IDs:', taskIdsArray);
       orderedTaskIdsRef.current = reordered;
       setOrderedTaskIds(reordered);
       await persistTaskOrder(reordered);
