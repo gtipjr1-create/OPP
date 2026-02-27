@@ -276,6 +276,7 @@ export default function TasksScreen() {
   const [isLocked, setIsLocked] = React.useState(false);
   const [selectedPriority, setSelectedPriority] = React.useState<Priority>('normal');
   const [addTaskError, setAddTaskError] = React.useState<string | null>(null);
+  const [orderSavedToast, setOrderSavedToast] = React.useState(false);
   const [newSessionError, setNewSessionError] = React.useState<string | null>(null);
   const [isScheduleOpen, setIsScheduleOpen] = React.useState(false);
   const [orderedTaskIds, setOrderedTaskIds] = React.useState<string[]>([]);
@@ -364,6 +365,10 @@ export default function TasksScreen() {
 
       try {
         await reorderTaskPositionsAction(listId, orderedIds);
+        setOrderSavedToast(true);
+        window.setTimeout(() => {
+          setOrderSavedToast(false);
+        }, 1400);
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Could not save task order';
         setAddTaskError(
@@ -575,6 +580,11 @@ export default function TasksScreen() {
           {newSessionError ? (
             <div className="mt-4 rounded-2xl border border-red-400/45 bg-red-500/15 px-4 py-3 text-sm text-red-100">
               New Session failed: {newSessionError}
+            </div>
+          ) : null}
+          {orderSavedToast ? (
+            <div className="mt-4 rounded-2xl border border-emerald-400/40 bg-emerald-500/15 px-4 py-2 text-sm text-emerald-100">
+              Order saved
             </div>
           ) : null}
         </header>
