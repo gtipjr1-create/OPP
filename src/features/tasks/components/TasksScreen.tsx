@@ -251,11 +251,12 @@ function SortableTaskCard({
         <div className={['truncate', task.done ? 'line-through text-white/45' : ''].join(' ')}>
           {task.title}
         </div>
-        <div className="mt-2 text-xs text-white/55">
-          {task.time ? `@ ${formatDisplayTime(task.time)}` : '-'}
-          <span className="mx-2">|</span>
+        <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-white/55">
+          <span className="whitespace-nowrap">{task.time ? `@ ${formatDisplayTime(task.time)}` : '-'}</span>
+          <span className="text-white/30">|</span>
           <span
             className={[
+              'whitespace-nowrap',
               task.priority === 'high'
                 ? 'text-[color:var(--priority-high)]'
                 : task.priority === 'normal'
@@ -267,8 +268,8 @@ function SortableTaskCard({
           </span>
           {task.done ? (
             <>
-              <span className="mx-2">|</span>
-              <span className="text-[color:var(--state-completed)]">COMPLETED</span>
+              <span className="text-white/30">|</span>
+              <span className="whitespace-nowrap text-[color:var(--state-completed)]">COMPLETED</span>
             </>
           ) : null}
         </div>
