@@ -232,7 +232,7 @@ function SortableTaskCard({
       style={style}
       data-task-id={task.id}
       className={[
-        'draggable-row relative box-border w-full max-w-full flex items-center gap-3 overflow-hidden rounded-2xl border border-white/10 bg-black/30 px-3 py-2.5 sm:px-4 sm:py-3',
+        'draggable-row relative box-border grid w-full max-w-full grid-cols-[auto_minmax(0,1fr)_5.75rem] items-center gap-3 overflow-hidden rounded-2xl border border-white/10 bg-black/30 px-3 py-2.5 sm:grid-cols-[auto_minmax(0,1fr)_6.5rem] sm:px-4 sm:py-3',
         isDragging || isActiveDrag ? 'opacity-60' : '',
         task.done ? 'opacity-80' : '',
       ].join(' ')}
@@ -294,12 +294,12 @@ function SortableTaskCard({
           </button>
         </div>
       ) : (
-        <div className="flex max-w-full shrink-0 items-center gap-1">
+        <div className="flex w-full shrink-0 items-center justify-end gap-1">
           <button
             type="button"
             onClick={openConfirmDelete}
             disabled={!canEdit || isDeleting}
-            className="min-h-[44px] min-w-[44px] rounded-lg border border-white/10 bg-white/5 p-2 text-white/50 hover:bg-white/10 hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-40"
+            className="min-h-[42px] min-w-[42px] rounded-lg border border-white/10 bg-white/5 p-2 text-white/50 hover:bg-white/10 hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-40 sm:min-h-[44px] sm:min-w-[44px]"
             aria-label="Delete task"
           >
             <Trash2 size={14} />
@@ -311,7 +311,7 @@ function SortableTaskCard({
             {...listeners}
             disabled={!canEdit}
             aria-label="Drag to reorder task"
-            className="drag-handle min-h-[48px] min-w-[48px] cursor-grab rounded-lg border border-white/10 bg-white/5 p-2 text-white/65 active:scale-95 active:cursor-grabbing touch-none select-none disabled:cursor-not-allowed disabled:opacity-40"
+            className="drag-handle min-h-[42px] min-w-[42px] cursor-grab rounded-lg border border-white/10 bg-white/5 p-2 text-white/65 active:scale-95 active:cursor-grabbing touch-none select-none disabled:cursor-not-allowed disabled:opacity-40 sm:min-h-[44px] sm:min-w-[44px]"
             style={{ touchAction: 'none' }}
           >
             <GripVertical size={14} />
