@@ -33,3 +33,16 @@ body {
   touch-action: pan-y;
   overscroll-behavior-y: none;
 }
+
+.drag-handle {
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.draggable-row {
+  user-select: none;
+  -webkit-user-select: none;
+}

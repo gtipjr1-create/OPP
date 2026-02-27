@@ -646,7 +646,7 @@ export default function TasksScreen() {
                         key={task.id}
                         data-task-id={task.id}
                         className={[
-                          'flex items-center gap-3 rounded-2xl border border-white/10 bg-black/30 px-4 py-3',
+                          'draggable-row flex items-center gap-3 rounded-2xl border border-white/10 bg-black/30 px-4 py-3',
                           draggedTaskId === task.id ? 'opacity-60' : '',
                           task.done ? 'opacity-80' : '',
                         ].join(' ')}
@@ -702,6 +702,9 @@ export default function TasksScreen() {
                           <button
                             type="button"
                             draggable
+                            onMouseDown={(event) => {
+                              event.preventDefault();
+                            }}
                             onDragStart={() => {
                               setDraggedTaskId(task.id);
                             }}
@@ -719,12 +722,13 @@ export default function TasksScreen() {
                                 moveTaskFromTouchPoint(task.id, touch.clientX, touch.clientY);
                               }
                             }}
-                            onTouchEnd={() => {
+                            onTouchEnd={(event) => {
+                              event.preventDefault();
                               void persistTaskOrder(orderedTaskIdsRef.current);
                               setDraggedTaskId(null);
                             }}
                             aria-label="Drag to reorder task"
-                            className="cursor-grab rounded-lg border border-white/10 bg-white/5 p-1.5 text-white/45 hover:bg-white/10 hover:text-white/70 active:cursor-grabbing touch-none select-none"
+                            className="drag-handle cursor-grab rounded-lg border border-white/10 bg-white/5 p-1.5 text-white/45 hover:bg-white/10 hover:text-white/70 active:cursor-grabbing touch-none select-none"
                             style={{ touchAction: 'none' }}
                           >
                             <GripVertical size={14} />
