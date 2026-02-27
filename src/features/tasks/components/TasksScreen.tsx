@@ -309,7 +309,9 @@ export default function TasksScreen() {
   );
 
   React.useEffect(() => {
-    setOrderedTaskIds(tasks.map((task) => task.id));
+    const nextOrderedIds = tasks.map((task) => task.id);
+    orderedTaskIdsRef.current = nextOrderedIds;
+    setOrderedTaskIds(nextOrderedIds);
   }, [tasks]);
 
   React.useEffect(() => {
@@ -355,13 +357,13 @@ export default function TasksScreen() {
   const sessionStatus = total === 0 ? 'ACTIVE' : done === total ? 'COMPLETE' : 'IN PROGRESS';
 
   const persistTaskOrder = React.useCallback(
-    async (orderedIds: string[]) => {
-      if (!activeListId || orderedIds.length === 0) {
+    async (listId: string, orderedIds: string[]) => {
+      if (!listId || orderedIds.length === 0) {
         return;
       }
 
       try {
-        await reorderTaskPositionsAction(activeListId, orderedIds);
+        await reorderTaskPositionsAction(listId, orderedIds);
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Could not save task order';
         setAddTaskError(
@@ -370,7 +372,7 @@ export default function TasksScreen() {
         await reloadActiveTasks();
       }
     },
-    [activeListId, reloadActiveTasks],
+    [reloadActiveTasks],
   );
 
   const handleArchiveSelect = React.useCallback(
@@ -417,8 +419,12 @@ export default function TasksScreen() {
       console.log('Reordered IDs:', taskIdsArray);
       orderedTaskIdsRef.current = reordered;
       setOrderedTaskIds(reordered);
+      if (!activeListId) {
+        console.error('[DND] Missing activeListId - cannot persist reorder');
+        return;
+      }
       console.log('[DND] persisting order', { listId: activeListId, orderedIds: reordered });
-      await persistTaskOrder(reordered);
+      await persistTaskOrder(activeListId, reordered);
     },
     [activeListId, persistTaskOrder],
   );
