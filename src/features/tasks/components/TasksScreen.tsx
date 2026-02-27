@@ -248,7 +248,7 @@ function SortableTaskCard({
       </label>
 
       <div className="min-w-0 flex-1">
-        <div className={task.done ? 'truncate line-through text-white/45' : 'truncate'}>{task.title}</div>
+        <div className={task.done ? 'truncate break-all line-through text-white/45' : 'truncate break-all'}>{task.title}</div>
         <div className="mt-2 text-xs text-white/55">
           {task.time ? `@ ${formatDisplayTime(task.time)}` : '-'}
           <span className="mx-2">|</span>
@@ -273,7 +273,7 @@ function SortableTaskCard({
       </div>
 
       {confirmDelete ? (
-        <div className="absolute right-3 top-1/2 z-10 flex -translate-y-1/2 items-center gap-2 rounded-xl border border-white/10 bg-black/80 px-2 py-1">
+        <div className="absolute right-3 top-1/2 z-10 flex shrink-0 -translate-y-1/2 items-center gap-2 rounded-xl border border-white/10 bg-black/80 px-2 py-1">
           <button
             type="button"
             onClick={cancelConfirmDelete}
@@ -292,7 +292,7 @@ function SortableTaskCard({
           </button>
         </div>
       ) : (
-        <div className="flex items-center gap-1">
+        <div className="flex shrink-0 items-center gap-1">
           <button
             type="button"
             onClick={openConfirmDelete}
@@ -510,7 +510,7 @@ export default function TasksScreen() {
   );
 
   return (
-    <div className="min-h-dvh bg-black text-white">
+    <div className="min-h-dvh overflow-x-hidden bg-black text-white">
       <div className="mx-auto max-w-5xl px-5 pb-10 pt-8">
         <header className="mb-8">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
