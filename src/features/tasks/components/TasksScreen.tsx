@@ -404,22 +404,17 @@ export default function TasksScreen() {
         return;
       }
 
-      let nextOrder: string[] | null = null;
-      setOrderedTaskIds((previous) => {
-        const oldIndex = previous.indexOf(activeId);
-        const newIndex = previous.indexOf(overId);
-        if (oldIndex === -1 || newIndex === -1) {
-          return previous;
-        }
-        const reordered = arrayMove(previous, oldIndex, newIndex);
-        orderedTaskIdsRef.current = reordered;
-        nextOrder = reordered;
-        return reordered;
-      });
-
-      if (nextOrder) {
-        await persistTaskOrder(nextOrder);
+      const previous = orderedTaskIdsRef.current;
+      const oldIndex = previous.indexOf(activeId);
+      const newIndex = previous.indexOf(overId);
+      if (oldIndex === -1 || newIndex === -1) {
+        return;
       }
+
+      const reordered = arrayMove(previous, oldIndex, newIndex);
+      orderedTaskIdsRef.current = reordered;
+      setOrderedTaskIds(reordered);
+      await persistTaskOrder(reordered);
     },
     [persistTaskOrder],
   );
