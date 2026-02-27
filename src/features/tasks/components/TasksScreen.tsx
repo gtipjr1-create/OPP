@@ -5,11 +5,11 @@ import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core';
 import { DndContext, MouseSensor, TouchSensor, closestCenter, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { GripVertical } from 'lucide-react';
+import { GripVertical, Trash2 } from 'lucide-react';
 
 import { APP_CONFIG } from '@/config/app';
 
-import { createTaskAction, reorderTaskPositionsAction } from '../actions';
+import { createTaskAction, deleteTaskAction, reorderTaskPositionsAction } from '../actions';
 import { useTasksFeature } from '../useTasksFeature';
 
 type Priority = 'high' | 'normal' | 'low';
@@ -180,9 +180,16 @@ type SortableTaskCardProps = {
   canEdit: boolean;
   isActiveDrag: boolean;
   onToggleTask: (taskId: string, currentStatus: boolean) => void;
+  onDeleteTask: (taskId: string) => void;
 };
 
-function SortableTaskCard({ task, canEdit, isActiveDrag, onToggleTask }: SortableTaskCardProps) {
+function SortableTaskCard({
+  task,
+  canEdit,
+  isActiveDrag,
+  onToggleTask,
+  onDeleteTask,
+}: SortableTaskCardProps) {
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } =
     useSortable({ id: task.id, disabled: !canEdit });
 
@@ -237,6 +244,15 @@ function SortableTaskCard({ task, canEdit, isActiveDrag, onToggleTask }: Sortabl
       </div>
 
       <div className="flex items-center gap-1">
+        <button
+          type="button"
+          onClick={() => onDeleteTask(task.id)}
+          disabled={!canEdit}
+          className="min-h-[44px] min-w-[44px] rounded-lg border border-white/10 bg-white/5 p-2 text-white/50 hover:bg-white/10 hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-40"
+          aria-label="Delete task"
+        >
+          <Trash2 size={14} />
+        </button>
         <button
           ref={setActivatorNodeRef}
           type="button"
@@ -428,6 +444,21 @@ export default function TasksScreen() {
       await persistTaskOrder(activeListId, reordered);
     },
     [activeListId, persistTaskOrder],
+  );
+
+  const deleteTask = React.useCallback(
+    async (taskId: string) => {
+      try {
+        await deleteTaskAction(taskId);
+        await reloadActiveTasks();
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Could not delete task';
+        setAddTaskError(
+          process.env.NODE_ENV === 'development' ? message : 'Could not delete task',
+        );
+      }
+    },
+    [reloadActiveTasks],
   );
 
   return (
@@ -755,6 +786,9 @@ export default function TasksScreen() {
                             isActiveDrag={activeDragId === task.id}
                             onToggleTask={(taskId, currentStatus) => {
                               void toggleTask(taskId, currentStatus);
+                            }}
+                            onDeleteTask={(taskId) => {
+                              void deleteTask(taskId);
                             }}
                           />
                         ))}
