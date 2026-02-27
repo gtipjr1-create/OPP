@@ -247,7 +247,7 @@ function SortableTaskCard({
         />
       </label>
 
-      <div className="min-w-0 flex-1">
+      <div className="min-w-0 basis-0 flex-1 overflow-hidden">
         <div className={['block truncate', task.done ? 'line-through text-white/45' : ''].join(' ')}>
           {task.title}
         </div>
