@@ -247,8 +247,8 @@ function SortableTaskCard({
         />
       </label>
 
-      <div className="flex-1">
-        <div className={task.done ? 'line-through text-white/45' : ''}>{task.title}</div>
+      <div className="min-w-0 flex-1">
+        <div className={task.done ? 'truncate line-through text-white/45' : 'truncate'}>{task.title}</div>
         <div className="mt-2 text-xs text-white/55">
           {task.time ? `@ ${formatDisplayTime(task.time)}` : '-'}
           <span className="mx-2">|</span>
