@@ -255,13 +255,13 @@ function SortableTaskCard({
           <span>{task.time ? `@ ${formatDisplayTime(task.time)}` : '-'}</span>
           <span className="text-white/30">|</span>
           <span
-            className={[
+            className={
               task.priority === 'high'
                 ? 'text-[color:var(--priority-high)]'
                 : task.priority === 'normal'
                   ? 'text-[color:var(--priority-normal)]'
-                  : 'text-[color:var(--priority-low)]',
-            ].join(' ')}
+                  : 'text-[color:var(--priority-low)]'
+            }
           >
             {task.priority.toUpperCase()}
           </span>
