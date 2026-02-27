@@ -126,32 +126,13 @@ export async function reorderTaskPositionsAction(listId: string, orderedTaskIds:
   const missingIds = existingIds.filter((id) => !knownOrderedIds.includes(id));
   const fullOrder = [...knownOrderedIds, ...missingIds];
 
-  for (let index = 0; index < fullOrder.length; index += 1) {
-    const taskId = fullOrder[index];
-    const tempPosition = -1 * (index + 1);
-    const { error } = await supabase
-      .from('tasks')
-      .update({ position: tempPosition })
-      .eq('id', taskId)
-      .eq('list_id', normalizedListId);
+  const { error: reorderError } = await supabase.rpc('update_task_positions', {
+    p_list_id: normalizedListId,
+    p_task_ids: fullOrder,
+  });
 
-    if (error) {
-      throw new Error(error.message);
-    }
-  }
-
-  for (let index = 0; index < fullOrder.length; index += 1) {
-    const taskId = fullOrder[index];
-    const nextPosition = index + 1;
-    const { error } = await supabase
-      .from('tasks')
-      .update({ position: nextPosition })
-      .eq('id', taskId)
-      .eq('list_id', normalizedListId);
-
-    if (error) {
-      throw new Error(error.message);
-    }
+  if (reorderError) {
+    throw new Error(reorderError.message);
   }
 
   revalidatePath('/');
