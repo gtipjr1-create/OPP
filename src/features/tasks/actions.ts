@@ -126,7 +126,7 @@ export async function reorderTaskPositionsAction(listId: string, orderedTaskIds:
   const missingIds = existingIds.filter((id) => !knownOrderedIds.includes(id));
   const fullOrder = [...knownOrderedIds, ...missingIds];
 
-  const { error: reorderError } = await supabase.rpc('update_task_positions_v2', {
+  const { error: reorderError } = await supabase.rpc('update_task_positions', {
     p_list_id: normalizedListId,
     p_task_ids: fullOrder,
   });
