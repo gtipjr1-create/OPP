@@ -289,6 +289,7 @@ export default function TasksScreen() {
       }
       const [moved] = next.splice(sourceIndex, 1);
       next.splice(targetIndex, 0, moved);
+      orderedTaskIdsRef.current = next;
       nextOrder = next;
       return next;
     });
@@ -314,7 +315,7 @@ export default function TasksScreen() {
     [activeListId, reloadActiveTasks],
   );
 
-  const moveTaskFromTouchPoint = React.useCallback(
+  const moveTaskFromPoint = React.useCallback(
     (sourceId: string, clientX: number, clientY: number) => {
       const element = document.elementFromPoint(clientX, clientY) as HTMLElement | null;
       const taskCard = element?.closest('[data-task-id]') as HTMLElement | null;
@@ -336,6 +337,44 @@ export default function TasksScreen() {
       selectList(listId);
     },
     [selectList, setNewTaskText],
+  );
+
+  const handlePointerDragStart = React.useCallback(
+    (taskId: string, event: React.PointerEvent<HTMLButtonElement>) => {
+      if (event.pointerType === 'mouse' && event.button !== 0) {
+        return;
+      }
+      event.preventDefault();
+      setDraggedTaskId(taskId);
+      event.currentTarget.setPointerCapture(event.pointerId);
+    },
+    [],
+  );
+
+  const handlePointerDragMove = React.useCallback(
+    (taskId: string, event: React.PointerEvent<HTMLButtonElement>) => {
+      if (draggedTaskId !== taskId) {
+        return;
+      }
+      event.preventDefault();
+      moveTaskFromPoint(taskId, event.clientX, event.clientY);
+    },
+    [draggedTaskId, moveTaskFromPoint],
+  );
+
+  const handlePointerDragEnd = React.useCallback(
+    async (taskId: string, event: React.PointerEvent<HTMLButtonElement>) => {
+      if (draggedTaskId !== taskId) {
+        return;
+      }
+      event.preventDefault();
+      if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+        event.currentTarget.releasePointerCapture(event.pointerId);
+      }
+      await persistTaskOrder(orderedTaskIdsRef.current);
+      setDraggedTaskId(null);
+    },
+    [draggedTaskId, persistTaskOrder],
   );
 
   return (
@@ -650,17 +689,6 @@ export default function TasksScreen() {
                           draggedTaskId === task.id ? 'opacity-60' : '',
                           task.done ? 'opacity-80' : '',
                         ].join(' ')}
-                        onDragOver={(event) => {
-                          event.preventDefault();
-                        }}
-                        onDrop={() => {
-                          if (draggedTaskId) {
-                            const nextOrder = moveTask(draggedTaskId, task.id);
-                            if (nextOrder) {
-                              void persistTaskOrder(nextOrder);
-                            }
-                          }
-                        }}
                       >
                         <label className="flex min-h-[48px] min-w-[48px] items-center justify-center p-1">
                           <input
@@ -701,34 +729,24 @@ export default function TasksScreen() {
                         <div className="flex items-center gap-1">
                           <button
                             type="button"
-                            draggable
+                            draggable={false}
                             onMouseDown={(event) => {
                               event.preventDefault();
                             }}
-                            onDragStart={() => {
-                              setDraggedTaskId(task.id);
+                            onPointerDown={(event) => {
+                              handlePointerDragStart(task.id, event);
                             }}
-                            onDragEnd={() => {
-                              setDraggedTaskId(null);
+                            onPointerMove={(event) => {
+                              handlePointerDragMove(task.id, event);
                             }}
-                            onTouchStart={(event) => {
-                              event.preventDefault();
-                              setDraggedTaskId(task.id);
+                            onPointerUp={(event) => {
+                              void handlePointerDragEnd(task.id, event);
                             }}
-                            onTouchMove={(event) => {
-                              event.preventDefault();
-                              const touch = event.touches[0];
-                              if (touch) {
-                                moveTaskFromTouchPoint(task.id, touch.clientX, touch.clientY);
-                              }
-                            }}
-                            onTouchEnd={(event) => {
-                              event.preventDefault();
-                              void persistTaskOrder(orderedTaskIdsRef.current);
-                              setDraggedTaskId(null);
+                            onPointerCancel={(event) => {
+                              void handlePointerDragEnd(task.id, event);
                             }}
                             aria-label="Drag to reorder task"
-                            className="drag-handle cursor-grab rounded-lg border border-white/10 bg-white/5 p-1.5 text-white/45 hover:bg-white/10 hover:text-white/70 active:cursor-grabbing touch-none select-none"
+                            className="drag-handle min-h-[48px] min-w-[48px] cursor-grab rounded-lg border border-white/10 bg-white/5 p-2 text-white/65 active:scale-95 active:cursor-grabbing touch-none select-none"
                             style={{ touchAction: 'none' }}
                           >
                             <GripVertical size={14} />
