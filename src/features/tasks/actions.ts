@@ -140,44 +140,52 @@ export async function reorderTaskPositionsAction(listId: string, orderedTaskIds:
 }
 
 export async function deleteTaskAction(taskId: string) {
-  const normalizedTaskId = taskId.trim();
-  if (!normalizedTaskId) {
+  const id = String(taskId ?? '').trim();
+  if (!id) {
     return;
   }
 
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
-    error: authError,
+    error,
   } = await supabase.auth.getUser();
 
-  if (authError) {
-    throw new Error(authError.message);
+  if (error) {
+    console.error('[deleteTaskAction] auth.getUser failed:', error.message);
+    throw new Error(error.message);
   }
 
   if (!user) {
+    console.error('[deleteTaskAction] Auth session missing: no user returned from getUser().');
     redirect('/login');
   }
 
-  const { data: row, error: fetchError } = await supabase
+  const { data: existing, error: fetchError } = await supabase
     .from('tasks')
     .select('id, list_id')
-    .eq('id', normalizedTaskId)
-    .single();
+    .eq('id', id)
+    .maybeSingle();
 
   if (fetchError) {
     throw new Error(fetchError.message);
   }
 
-  const { error: deleteError } = await supabase.from('tasks').delete().eq('id', normalizedTaskId);
+  if (!existing) {
+    revalidatePath('/');
+    return;
+  }
+
+  const { error: deleteError } = await supabase.from('tasks').delete().eq('id', id);
   if (deleteError) {
+    console.error('[deleteTaskAction] delete failed:', deleteError.message);
     throw new Error(deleteError.message);
   }
 
   const { data: remaining, error: remainingError } = await supabase
     .from('tasks')
     .select('id')
-    .eq('list_id', row.list_id)
+    .eq('list_id', existing.list_id)
     .order('position', { ascending: true })
     .order('created_at', { ascending: true });
 
@@ -188,11 +196,12 @@ export async function deleteTaskAction(taskId: string) {
   const orderedIds = (remaining ?? []).map((task) => task.id);
 
   const { error: reorderError } = await supabase.rpc('update_task_positions', {
-    p_list_id: row.list_id,
+    p_list_id: existing.list_id,
     p_task_ids: orderedIds,
   });
 
   if (reorderError) {
+    console.error('[deleteTaskAction] update_task_positions failed:', reorderError);
     throw new Error(reorderError.message);
   }
 
