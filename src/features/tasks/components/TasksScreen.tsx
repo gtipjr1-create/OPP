@@ -344,27 +344,10 @@ export default function TasksScreen() {
     .slice()
     .sort((a, b) => (a.time! > b.time! ? 1 : -1));
 
-  const sortWithinPriority = (input: Task[]) =>
-    [...input].sort((a, b) => {
-      if (a.done !== b.done) {
-        return a.done ? 1 : -1;
-      }
-      if (a.time && b.time) {
-        return a.time > b.time ? 1 : -1;
-      }
-      if (a.time && !b.time) {
-        return -1;
-      }
-      if (!a.time && b.time) {
-        return 1;
-      }
-      return a.title.localeCompare(b.title);
-    });
-
   const groups: { label: string; items: Task[] }[] = [
-    { label: 'HIGH PRIORITY', items: sortWithinPriority(orderedTasks.filter((task) => task.priority === 'high')) },
-    { label: 'NORMAL', items: sortWithinPriority(orderedTasks.filter((task) => task.priority === 'normal')) },
-    { label: 'LOW', items: sortWithinPriority(orderedTasks.filter((task) => task.priority === 'low')) },
+    { label: 'HIGH PRIORITY', items: orderedTasks.filter((task) => task.priority === 'high') },
+    { label: 'NORMAL', items: orderedTasks.filter((task) => task.priority === 'normal') },
+    { label: 'LOW', items: orderedTasks.filter((task) => task.priority === 'low') },
   ].filter((group) => group.items.length > 0);
 
   const canEdit = !isLocked;
