@@ -126,13 +126,13 @@ export async function reorderTaskPositionsAction(listId: string, orderedTaskIds:
   const missingIds = existingIds.filter((id) => !knownOrderedIds.includes(id));
   const fullOrder = [...knownOrderedIds, ...missingIds];
 
-  const { error: reorderError } = await supabase.rpc('update_task_positions', {
+  const { error: reorderError } = await supabase.rpc('update_task_positions_v2', {
     p_list_id: normalizedListId,
     p_task_ids: fullOrder,
   });
 
   if (reorderError) {
-    console.error('[reorderTaskPositionsAction] rpc update_task_positions failed:', {
+    console.error('[reorderTaskPositionsAction] rpc update_task_positions_v2 failed:', {
       message: reorderError.message,
       details: (reorderError as { details?: string }).details,
       hint: (reorderError as { hint?: string }).hint,
