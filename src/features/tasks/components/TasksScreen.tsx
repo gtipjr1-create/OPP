@@ -248,7 +248,7 @@ function SortableTaskCard({
       </label>
 
       <div className="min-w-0 flex-1">
-        <div className={task.done ? 'truncate break-all line-through text-white/45' : 'truncate break-all'}>{task.title}</div>
+        <div className={`${task.done ? 'line-through text-white/45' : ''} truncate`}>{task.title}</div>
         <div className="mt-2 text-xs text-white/55">
           {task.time ? `@ ${formatDisplayTime(task.time)}` : '-'}
           <span className="mx-2">|</span>
@@ -510,7 +510,7 @@ export default function TasksScreen() {
   );
 
   return (
-    <div className="min-h-dvh overflow-x-hidden bg-black text-white">
+    <div className="min-h-dvh bg-black text-white overflow-x-hidden">
       <div className="mx-auto max-w-5xl px-5 pb-10 pt-8">
         <header className="mb-8">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
