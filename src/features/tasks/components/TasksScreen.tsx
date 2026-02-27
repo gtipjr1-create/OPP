@@ -232,7 +232,7 @@ function SortableTaskCard({
       style={style}
       data-task-id={task.id}
       className={[
-        'draggable-row relative flex items-center gap-3 overflow-hidden rounded-2xl border border-white/10 bg-black/30 px-3 py-2.5 sm:px-4 sm:py-3',
+        'draggable-row relative w-full max-w-full flex items-center gap-3 overflow-hidden rounded-2xl border border-white/10 bg-black/30 px-3 py-2.5 sm:px-4 sm:py-3',
         isDragging || isActiveDrag ? 'opacity-60' : '',
         task.done ? 'opacity-80' : '',
       ].join(' ')}
@@ -248,15 +248,14 @@ function SortableTaskCard({
       </label>
 
       <div className="min-w-0 flex-1">
-        <div className={['truncate', task.done ? 'line-through text-white/45' : ''].join(' ')}>
+        <div className={['block truncate', task.done ? 'line-through text-white/45' : ''].join(' ')}>
           {task.title}
         </div>
         <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-white/55">
-          <span className="whitespace-nowrap">{task.time ? `@ ${formatDisplayTime(task.time)}` : '-'}</span>
+          <span>{task.time ? `@ ${formatDisplayTime(task.time)}` : '-'}</span>
           <span className="text-white/30">|</span>
           <span
             className={[
-              'whitespace-nowrap',
               task.priority === 'high'
                 ? 'text-[color:var(--priority-high)]'
                 : task.priority === 'normal'
@@ -269,7 +268,7 @@ function SortableTaskCard({
           {task.done ? (
             <>
               <span className="text-white/30">|</span>
-              <span className="whitespace-nowrap text-[color:var(--state-completed)]">COMPLETED</span>
+              <span className="text-[color:var(--state-completed)]">COMPLETED</span>
             </>
           ) : null}
         </div>
