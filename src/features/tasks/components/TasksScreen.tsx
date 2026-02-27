@@ -180,7 +180,7 @@ type SortableTaskCardProps = {
   canEdit: boolean;
   isActiveDrag: boolean;
   onToggleTask: (taskId: string, currentStatus: boolean) => void;
-  onDeleteTask: (taskId: string) => void;
+  onDeleteTask: (taskId: string) => Promise<void> | void;
 };
 
 function SortableTaskCard({
@@ -196,6 +196,34 @@ function SortableTaskCard({
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
+  };
+
+  // ✅ Confirm delete (tap trash → confirm)
+  const [confirmDelete, setConfirmDelete] = React.useState(false);
+  const [isDeleting, setIsDeleting] = React.useState(false);
+
+  const openConfirmDelete = (event: React.MouseEvent) => {
+    event.stopPropagation();
+    if (!canEdit || isDeleting) return;
+    setConfirmDelete(true);
+  };
+
+  const cancelConfirmDelete = (event: React.MouseEvent) => {
+    event.stopPropagation();
+    setConfirmDelete(false);
+  };
+
+  const confirmAndDelete = async (event: React.MouseEvent) => {
+    event.stopPropagation();
+    if (!canEdit || isDeleting) return;
+
+    setIsDeleting(true);
+    try {
+      await Promise.resolve(onDeleteTask(task.id));
+    } finally {
+      setIsDeleting(false);
+      setConfirmDelete(false);
+    }
   };
 
   return (
@@ -215,6 +243,7 @@ function SortableTaskCard({
           checked={task.done}
           onChange={() => onToggleTask(task.id, task.done)}
           className="h-6 w-6 accent-blue-500"
+          disabled={!canEdit}
         />
       </label>
 
@@ -244,15 +273,37 @@ function SortableTaskCard({
       </div>
 
       <div className="flex items-center gap-1">
-        <button
-          type="button"
-          onClick={() => onDeleteTask(task.id)}
-          disabled={!canEdit}
-          className="min-h-[44px] min-w-[44px] rounded-lg border border-white/10 bg-white/5 p-2 text-white/50 hover:bg-white/10 hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-40"
-          aria-label="Delete task"
-        >
-          <Trash2 size={14} />
-        </button>
+        {confirmDelete ? (
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={cancelConfirmDelete}
+              disabled={isDeleting}
+              className="min-h-[44px] rounded-lg border border-white/10 bg-white/5 px-3 text-xs font-semibold text-white/80 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={confirmAndDelete}
+              disabled={isDeleting}
+              className="min-h-[44px] rounded-lg bg-red-500/20 px-3 text-xs font-semibold text-red-200 hover:bg-red-500/30 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              {isDeleting ? '...' : 'Delete'}
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={openConfirmDelete}
+            disabled={!canEdit || isDeleting}
+            className="min-h-[44px] min-w-[44px] rounded-lg border border-white/10 bg-white/5 p-2 text-white/50 hover:bg-white/10 hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-40"
+            aria-label="Delete task"
+          >
+            <Trash2 size={14} />
+          </button>
+        )}
+
         <button
           ref={setActivatorNodeRef}
           type="button"
@@ -387,9 +438,7 @@ export default function TasksScreen() {
         }, 1400);
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Could not save task order';
-        setAddTaskError(
-          process.env.NODE_ENV === 'development' ? message : 'Could not save task order',
-        );
+        setAddTaskError(process.env.NODE_ENV === 'development' ? message : 'Could not save task order');
         await reloadActiveTasks();
       }
     },
@@ -437,10 +486,12 @@ export default function TasksScreen() {
       const reordered = arrayMove(previous, oldIndex, newIndex);
       orderedTaskIdsRef.current = reordered;
       setOrderedTaskIds(reordered);
+
       if (!activeListId) {
         console.error('[DND] Missing activeListId - cannot persist reorder');
         return;
       }
+
       await persistTaskOrder(activeListId, reordered);
     },
     [activeListId, persistTaskOrder],
@@ -453,9 +504,7 @@ export default function TasksScreen() {
         await reloadActiveTasks();
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Could not delete task';
-        setAddTaskError(
-          process.env.NODE_ENV === 'development' ? message : 'Could not delete task',
-        );
+        setAddTaskError(process.env.NODE_ENV === 'development' ? message : 'Could not delete task');
       }
     },
     [reloadActiveTasks],
@@ -471,7 +520,9 @@ export default function TasksScreen() {
 
               <div className="mt-3">
                 <div className="flex items-end gap-3">
-                  <h1 className="text-5xl font-extrabold tracking-tight sm:text-6xl md:text-7xl">{APP_CONFIG.shortName}</h1>
+                  <h1 className="text-5xl font-extrabold tracking-tight sm:text-6xl md:text-7xl">
+                    {APP_CONFIG.shortName}
+                  </h1>
                   <span className="mb-1 text-2xl font-black text-blue-400/90">{APP_CONFIG.yearMark}</span>
                 </div>
                 {isEditingTitle ? (
@@ -518,9 +569,7 @@ export default function TasksScreen() {
                   onClick={() => setIsLocked((value) => !value)}
                   className={[
                     'rounded-full border px-3 py-1',
-                    isLocked
-                      ? 'border-white/10 bg-white/5 text-white/70'
-                      : 'border-blue-500/40 bg-blue-500/10 text-blue-200',
+                    isLocked ? 'border-white/10 bg-white/5 text-white/70' : 'border-blue-500/40 bg-blue-500/10 text-blue-200',
                   ].join(' ')}
                 >
                   {isLocked ? 'LOCKED' : 'UNLOCKED'}
@@ -539,7 +588,9 @@ export default function TasksScreen() {
                   {sessionStatus}
                 </div>
 
-                <div className="text-white/80">{total} tasks | {high} high priority | {scheduled} scheduled</div>
+                <div className="text-white/80">
+                  {total} tasks | {high} high priority | {scheduled} scheduled
+                </div>
               </div>
 
               <div className="mt-5 grid gap-3 sm:grid-cols-3">
@@ -547,7 +598,9 @@ export default function TasksScreen() {
                   <div className="text-xs font-semibold tracking-[0.2em] text-white/50">COMPLETION</div>
                   <div className="mt-1 flex items-baseline justify-between">
                     <div className="text-2xl font-bold">{pct}%</div>
-                    <div className="text-sm text-white/60">{done}/{total}</div>
+                    <div className="text-sm text-white/60">
+                      {done}/{total}
+                    </div>
                   </div>
                   <div className="mt-2 h-2 w-full rounded-[999px] bg-white/8">
                     <div className="h-2 rounded-full bg-blue-500/80" style={{ width: `${pct}%` }} />
@@ -558,7 +611,9 @@ export default function TasksScreen() {
                   <div className="text-xs font-semibold tracking-[0.2em] text-white/50">WEIGHTED</div>
                   <div className="mt-1 flex items-baseline justify-between">
                     <div className="text-2xl font-bold">{weightedPct}%</div>
-                    <div className="text-sm text-white/60">{pointsDone}/{pointsTotal}</div>
+                    <div className="text-sm text-white/60">
+                      {pointsDone}/{pointsTotal}
+                    </div>
                   </div>
                   <div className="mt-2 h-2 w-full rounded-[999px] bg-white/8">
                     <div className="h-2 rounded-full bg-blue-500/80" style={{ width: `${weightedPct}%` }} />
@@ -585,9 +640,7 @@ export default function TasksScreen() {
                     await createNewList();
                   } catch (error) {
                     const message = error instanceof Error ? error.message : 'Could not create session';
-                    setNewSessionError(
-                      process.env.NODE_ENV === 'development' ? message : 'Could not create session',
-                    );
+                    setNewSessionError(process.env.NODE_ENV === 'development' ? message : 'Could not create session');
                   }
                 }}
                 className="min-h-[44px] w-full rounded-2xl border border-white/10 bg-white px-4 py-3 text-sm font-semibold text-black hover:opacity-90 sm:w-auto"
@@ -608,11 +661,13 @@ export default function TasksScreen() {
               </button>
             </div>
           </div>
+
           {newSessionError ? (
             <div className="mt-4 rounded-2xl border border-red-400/45 bg-red-500/15 px-4 py-3 text-sm text-red-100">
               New Session failed: {newSessionError}
             </div>
           ) : null}
+
           {orderSavedToast ? (
             <div className="mt-4 rounded-2xl border border-emerald-400/40 bg-emerald-500/15 px-4 py-2 text-sm text-emerald-100">
               Order saved
@@ -651,9 +706,7 @@ export default function TasksScreen() {
                     >
                       {slotTasks.length === 0 ? (
                         <div className="flex h-5 items-center">
-                          {isCurrentHour ? (
-                            <span className="h-1.5 w-1.5 rounded-full bg-[color:var(--state-active)]" />
-                          ) : null}
+                          {isCurrentHour ? <span className="h-1.5 w-1.5 rounded-full bg-[color:var(--state-active)]" /> : null}
                         </div>
                       ) : (
                         <div className="space-y-2">
@@ -696,19 +749,13 @@ export default function TasksScreen() {
                     await reloadActiveTasks();
                   } catch (error) {
                     const message = error instanceof Error ? error.message : 'Could not create task';
-                    setAddTaskError(
-                      process.env.NODE_ENV === 'development' ? message : 'Could not create task',
-                    );
+                    setAddTaskError(process.env.NODE_ENV === 'development' ? message : 'Could not create task');
                   }
                 }}
                 className="mt-3 flex flex-col gap-3 rounded-2xl border border-white/10 bg-black/30 px-4 py-3 sm:flex-row sm:items-center"
               >
                 <input type="hidden" name="list_id" value={activeListId ?? ''} />
-                <input
-                  type="hidden"
-                  name="content"
-                  value={withPriorityTag(newTaskText, selectedPriority)}
-                />
+                <input type="hidden" name="content" value={withPriorityTag(newTaskText, selectedPriority)} />
                 <input
                   value={newTaskText}
                   disabled={!canEdit}
@@ -732,6 +779,7 @@ export default function TasksScreen() {
                   Add
                 </button>
               </form>
+
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 {(['high', 'normal', 'low'] as Priority[]).map((priority) => (
                   <button
@@ -754,6 +802,7 @@ export default function TasksScreen() {
                   </button>
                 ))}
               </div>
+
               {addTaskError ? <p className="mt-3 text-sm text-red-300">{addTaskError}</p> : null}
             </div>
 
@@ -787,9 +836,7 @@ export default function TasksScreen() {
                             onToggleTask={(taskId, currentStatus) => {
                               void toggleTask(taskId, currentStatus);
                             }}
-                            onDeleteTask={(taskId) => {
-                              void deleteTask(taskId);
-                            }}
+                            onDeleteTask={deleteTask}
                           />
                         ))}
                       </div>
@@ -808,10 +855,7 @@ export default function TasksScreen() {
           </div>
 
           <div className="mt-3 flex items-center gap-3 rounded-2xl border border-white/10 bg-black/30 px-4 py-3">
-            <input
-              placeholder="Search history..."
-              className="flex-1 bg-transparent text-base outline-none placeholder:text-white/30"
-            />
+            <input placeholder="Search history..." className="flex-1 bg-transparent text-base outline-none placeholder:text-white/30" />
           </div>
 
           <div className="mt-4 space-y-2 text-sm text-white/45">
@@ -844,13 +888,10 @@ export default function TasksScreen() {
               </button>
             ))}
             {lists.length === 0 ? <div>No archived sessions yet.</div> : null}
-            {lists.length > 6 ? (
-              <div className="text-xs text-white/35">Showing latest 6 sessions.</div>
-            ) : null}
+            {lists.length > 6 ? <div className="text-xs text-white/35">Showing latest 6 sessions.</div> : null}
           </div>
         </div>
       </div>
     </div>
   );
 }
-
