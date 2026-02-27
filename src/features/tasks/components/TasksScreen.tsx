@@ -232,7 +232,7 @@ function SortableTaskCard({
       style={style}
       data-task-id={task.id}
       className={[
-        'draggable-row relative w-full max-w-full flex items-center gap-3 overflow-hidden rounded-2xl border border-white/10 bg-black/30 px-3 py-2.5 sm:px-4 sm:py-3',
+        'draggable-row relative box-border w-full max-w-full flex items-center gap-3 overflow-hidden rounded-2xl border border-white/10 bg-black/30 px-3 py-2.5 sm:px-4 sm:py-3',
         isDragging || isActiveDrag ? 'opacity-60' : '',
         task.done ? 'opacity-80' : '',
       ].join(' ')}
@@ -275,12 +275,12 @@ function SortableTaskCard({
       </div>
 
       {confirmDelete ? (
-        <div className="absolute right-3 top-1/2 z-10 flex shrink-0 -translate-y-1/2 items-center gap-2 rounded-xl border border-white/10 bg-black/80 px-2 py-1">
+        <div className="absolute right-3 top-1/2 z-10 flex max-w-[calc(100%-5rem)] shrink-0 -translate-y-1/2 items-center gap-2 overflow-hidden rounded-xl border border-white/10 bg-black/80 px-2 py-1">
           <button
             type="button"
             onClick={cancelConfirmDelete}
             disabled={isDeleting}
-            className="min-h-[40px] rounded-lg border border-white/10 bg-white/5 px-3 text-xs font-semibold text-white/80 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
+            className="min-h-[40px] shrink-0 whitespace-nowrap rounded-lg border border-white/10 bg-white/5 px-3 text-xs font-semibold text-white/80 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
           >
             Cancel
           </button>
@@ -288,13 +288,13 @@ function SortableTaskCard({
             type="button"
             onClick={confirmAndDelete}
             disabled={isDeleting}
-            className="min-h-[40px] rounded-lg bg-red-500/20 px-3 text-xs font-semibold text-red-200 hover:bg-red-500/30 disabled:cursor-not-allowed disabled:opacity-40"
+            className="min-h-[40px] shrink-0 whitespace-nowrap rounded-lg bg-red-500/20 px-3 text-xs font-semibold text-red-200 hover:bg-red-500/30 disabled:cursor-not-allowed disabled:opacity-40"
           >
             {isDeleting ? '...' : 'Delete'}
           </button>
         </div>
       ) : (
-        <div className="flex shrink-0 items-center gap-1">
+        <div className="flex max-w-full shrink-0 items-center gap-1">
           <button
             type="button"
             onClick={openConfirmDelete}
