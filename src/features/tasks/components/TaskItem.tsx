@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle2, Circle, ListChecks, Trash2 } from 'lucide-react';
 
@@ -28,13 +28,14 @@ export default function TaskItem({
   const [touchStartX, setTouchStartX] = useState(0);
   const [dragX, setDragX] = useState(0);
   const [isExiting, setIsExiting] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   const handleTouchStart = (event: React.TouchEvent) => {
     setTouchStartX(event.touches[0].clientX);
   };
 
   const handleTouchMove = (event: React.TouchEvent) => {
-    if (isEditing) {
+    if (isEditing || confirmDelete) {
       return;
     }
 
@@ -46,11 +47,29 @@ export default function TaskItem({
 
   const handleTouchEnd = () => {
     if (dragX < -SWIPE_THRESHOLD) {
-      setIsExiting(true);
+      setConfirmDelete(true);
+      setDragX(-SWIPE_THRESHOLD); // keep it revealed
       return;
     }
 
     setDragX(0);
+  };
+
+  const openDeleteConfirm = (event: React.MouseEvent) => {
+    event.stopPropagation();
+    setConfirmDelete(true);
+  };
+
+  const cancelDeleteConfirm = (event: React.MouseEvent) => {
+    event.stopPropagation();
+    setConfirmDelete(false);
+    setDragX(0);
+  };
+
+  const confirmDeleteNow = (event: React.MouseEvent) => {
+    event.stopPropagation();
+    setConfirmDelete(false);
+    setIsExiting(true); // triggers exit animation; delete runs on animation complete
   };
 
   const revealOpacity = Math.min(Math.abs(dragX) / SWIPE_THRESHOLD, 1);
@@ -91,7 +110,7 @@ export default function TaskItem({
                 ? 'bg-zinc-950 border-zinc-900 opacity-40'
                 : 'bg-zinc-900 border-zinc-800 hover:border-blue-500'
             }`}
-            onClick={() => !isEditing && toggleTask(task.id, task.is_done)}
+            onClick={() => !isEditing && !confirmDelete && toggleTask(task.id, task.is_done)}
           >
             {task.is_done ? (
               <CheckCircle2 size={32} className="text-blue-500 shrink-0" />
@@ -131,15 +150,31 @@ export default function TaskItem({
               >
                 <ListChecks size={20} />
               </button>
-              <button
-                onClick={(event) => {
-                  event.stopPropagation();
-                  deleteTask(task.id);
-                }}
-                className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-zinc-500 hover:bg-zinc-800 hover:text-red-400"
-              >
-                <Trash2 size={20} />
-              </button>
+
+              {confirmDelete ? (
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={cancelDeleteConfirm}
+                    className="min-h-[44px] rounded-lg border border-white/10 bg-white/5 px-3 text-xs font-semibold text-white/80 hover:bg-white/10"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={confirmDeleteNow}
+                    className="min-h-[44px] rounded-lg bg-red-500/20 px-3 text-xs font-semibold text-red-200 hover:bg-red-500/30"
+                  >
+                    Delete
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={openDeleteConfirm}
+                  className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-zinc-500 hover:bg-zinc-800 hover:text-red-400"
+                  aria-label="Delete task"
+                >
+                  <Trash2 size={20} />
+                </button>
+              )}
             </div>
           </div>
         </motion.div>
