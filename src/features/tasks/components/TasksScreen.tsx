@@ -201,6 +201,7 @@ function SortableTaskCard({
   // ✅ Confirm delete (tap trash → confirm)
   const [confirmDelete, setConfirmDelete] = React.useState(false);
   const [isDeleting, setIsDeleting] = React.useState(false);
+  const [isExpanded, setIsExpanded] = React.useState(false);
 
   const openConfirmDelete = (event: React.MouseEvent) => {
     event.stopPropagation();
@@ -247,8 +248,20 @@ function SortableTaskCard({
         />
       </label>
 
-      <div className="min-w-0 basis-0 flex-1 overflow-hidden">
-        <div className={['block truncate', task.done ? 'line-through text-white/45' : ''].join(' ')}>
+      <button
+        type="button"
+        onClick={() => setIsExpanded((value) => !value)}
+        className="min-w-0 basis-0 flex-1 overflow-hidden rounded-md text-left"
+        aria-expanded={isExpanded}
+        aria-label={isExpanded ? 'Collapse task details' : 'Expand task details'}
+      >
+        <div
+          className={[
+            'block',
+            isExpanded ? 'whitespace-normal break-words' : 'truncate',
+            task.done ? 'line-through text-white/45' : '',
+          ].join(' ')}
+        >
           {task.title}
         </div>
         <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-white/55">
@@ -272,7 +285,7 @@ function SortableTaskCard({
             </>
           ) : null}
         </div>
-      </div>
+      </button>
 
       {confirmDelete ? (
         <div className="absolute right-3 top-1/2 z-10 flex max-w-[calc(100%-5rem)] shrink-0 -translate-y-1/2 items-center gap-2 overflow-hidden rounded-xl border border-white/10 bg-black/80 px-2 py-1">
