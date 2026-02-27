@@ -132,7 +132,7 @@ export async function reorderTaskPositionsAction(listId: string, orderedTaskIds:
   });
 
   if (reorderError) {
-    console.error('[RPC] update_task_positions_v2 failed', reorderError);
+    console.error('[RPC] update_task_positions failed', reorderError);
     throw new Error(reorderError.message);
   }
 
