@@ -232,7 +232,7 @@ function SortableTaskCard({
       style={style}
       data-task-id={task.id}
       className={[
-        'draggable-row flex items-center gap-3 rounded-2xl border border-white/10 bg-black/30 px-4 py-3',
+        'draggable-row relative flex items-center gap-3 rounded-2xl border border-white/10 bg-black/30 px-4 py-3',
         isDragging || isActiveDrag ? 'opacity-60' : '',
         task.done ? 'opacity-80' : '',
       ].join(' ')}
@@ -272,27 +272,27 @@ function SortableTaskCard({
         </div>
       </div>
 
-      <div className="flex items-center gap-1">
-        {confirmDelete ? (
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              onClick={cancelConfirmDelete}
-              disabled={isDeleting}
-              className="min-h-[44px] rounded-lg border border-white/10 bg-white/5 px-3 text-xs font-semibold text-white/80 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={confirmAndDelete}
-              disabled={isDeleting}
-              className="min-h-[44px] rounded-lg bg-red-500/20 px-3 text-xs font-semibold text-red-200 hover:bg-red-500/30 disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              {isDeleting ? '...' : 'Delete'}
-            </button>
-          </div>
-        ) : (
+      {confirmDelete ? (
+        <div className="absolute right-3 top-1/2 z-10 flex -translate-y-1/2 items-center gap-2 rounded-xl border border-white/10 bg-black/80 px-2 py-1">
+          <button
+            type="button"
+            onClick={cancelConfirmDelete}
+            disabled={isDeleting}
+            className="min-h-[40px] rounded-lg border border-white/10 bg-white/5 px-3 text-xs font-semibold text-white/80 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={confirmAndDelete}
+            disabled={isDeleting}
+            className="min-h-[40px] rounded-lg bg-red-500/20 px-3 text-xs font-semibold text-red-200 hover:bg-red-500/30 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            {isDeleting ? '...' : 'Delete'}
+          </button>
+        </div>
+      ) : (
+        <div className="flex items-center gap-1">
           <button
             type="button"
             onClick={openConfirmDelete}
@@ -302,21 +302,20 @@ function SortableTaskCard({
           >
             <Trash2 size={14} />
           </button>
-        )}
-
-        <button
-          ref={setActivatorNodeRef}
-          type="button"
-          {...attributes}
-          {...listeners}
-          disabled={!canEdit}
-          aria-label="Drag to reorder task"
-          className="drag-handle min-h-[48px] min-w-[48px] cursor-grab rounded-lg border border-white/10 bg-white/5 p-2 text-white/65 active:scale-95 active:cursor-grabbing touch-none select-none disabled:cursor-not-allowed disabled:opacity-40"
-          style={{ touchAction: 'none' }}
-        >
-          <GripVertical size={14} />
-        </button>
-      </div>
+          <button
+            ref={setActivatorNodeRef}
+            type="button"
+            {...attributes}
+            {...listeners}
+            disabled={!canEdit}
+            aria-label="Drag to reorder task"
+            className="drag-handle min-h-[48px] min-w-[48px] cursor-grab rounded-lg border border-white/10 bg-white/5 p-2 text-white/65 active:scale-95 active:cursor-grabbing touch-none select-none disabled:cursor-not-allowed disabled:opacity-40"
+            style={{ touchAction: 'none' }}
+          >
+            <GripVertical size={14} />
+          </button>
+        </div>
+      )}
     </div>
   );
 }
