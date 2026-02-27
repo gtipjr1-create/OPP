@@ -1,6 +1,10 @@
 'use client';
 
 import React from 'react';
+import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core';
+import { DndContext, MouseSensor, TouchSensor, closestCenter, useSensor, useSensors } from '@dnd-kit/core';
+import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { GripVertical } from 'lucide-react';
 
 import { APP_CONFIG } from '@/config/app';
@@ -171,6 +175,85 @@ function formatModifiedDate(iso: string): string {
   });
 }
 
+type SortableTaskCardProps = {
+  task: Task;
+  canEdit: boolean;
+  isActiveDrag: boolean;
+  onToggleTask: (taskId: string, currentStatus: boolean) => void;
+};
+
+function SortableTaskCard({ task, canEdit, isActiveDrag, onToggleTask }: SortableTaskCardProps) {
+  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } =
+    useSortable({ id: task.id, disabled: !canEdit });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      data-task-id={task.id}
+      className={[
+        'draggable-row flex items-center gap-3 rounded-2xl border border-white/10 bg-black/30 px-4 py-3',
+        isDragging || isActiveDrag ? 'opacity-60' : '',
+        task.done ? 'opacity-80' : '',
+      ].join(' ')}
+    >
+      <label className="flex min-h-[48px] min-w-[48px] items-center justify-center p-1">
+        <input
+          type="checkbox"
+          checked={task.done}
+          onChange={() => onToggleTask(task.id, task.done)}
+          className="h-6 w-6 accent-blue-500"
+        />
+      </label>
+
+      <div className="flex-1">
+        <div className={task.done ? 'line-through text-white/45' : ''}>{task.title}</div>
+        <div className="mt-2 text-xs text-white/55">
+          {task.time ? `@ ${formatDisplayTime(task.time)}` : '-'}
+          <span className="mx-2">|</span>
+          <span
+            className={[
+              task.priority === 'high'
+                ? 'text-[color:var(--priority-high)]'
+                : task.priority === 'normal'
+                  ? 'text-[color:var(--priority-normal)]'
+                  : 'text-[color:var(--priority-low)]',
+            ].join(' ')}
+          >
+            {task.priority.toUpperCase()}
+          </span>
+          {task.done ? (
+            <>
+              <span className="mx-2">|</span>
+              <span className="text-[color:var(--state-completed)]">COMPLETED</span>
+            </>
+          ) : null}
+        </div>
+      </div>
+
+      <div className="flex items-center gap-1">
+        <button
+          ref={setActivatorNodeRef}
+          type="button"
+          {...attributes}
+          {...listeners}
+          disabled={!canEdit}
+          aria-label="Drag to reorder task"
+          className="drag-handle min-h-[48px] min-w-[48px] cursor-grab rounded-lg border border-white/10 bg-white/5 p-2 text-white/65 active:scale-95 active:cursor-grabbing touch-none select-none disabled:cursor-not-allowed disabled:opacity-40"
+          style={{ touchAction: 'none' }}
+        >
+          <GripVertical size={14} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function TasksScreen() {
   const {
     lists,
@@ -196,8 +279,21 @@ export default function TasksScreen() {
   const [newSessionError, setNewSessionError] = React.useState<string | null>(null);
   const [isScheduleOpen, setIsScheduleOpen] = React.useState(false);
   const [orderedTaskIds, setOrderedTaskIds] = React.useState<string[]>([]);
-  const [draggedTaskId, setDraggedTaskId] = React.useState<string | null>(null);
+  const [activeDragId, setActiveDragId] = React.useState<string | null>(null);
   const orderedTaskIdsRef = React.useRef<string[]>([]);
+  const sensors = useSensors(
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 120,
+        tolerance: 8,
+      },
+    }),
+    useSensor(MouseSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+  );
 
   const tasks: Task[] = React.useMemo(
     () =>
@@ -275,27 +371,6 @@ export default function TasksScreen() {
   const currentHour = new Date().getHours();
   const sessionStatus = total === 0 ? 'ACTIVE' : done === total ? 'COMPLETE' : 'IN PROGRESS';
 
-  const moveTask = React.useCallback((sourceId: string, targetId: string) => {
-    if (sourceId === targetId) {
-      return null;
-    }
-    let nextOrder: string[] | null = null;
-    setOrderedTaskIds((previous) => {
-      const next = [...previous];
-      const sourceIndex = next.indexOf(sourceId);
-      const targetIndex = next.indexOf(targetId);
-      if (sourceIndex === -1 || targetIndex === -1) {
-        return previous;
-      }
-      const [moved] = next.splice(sourceIndex, 1);
-      next.splice(targetIndex, 0, moved);
-      orderedTaskIdsRef.current = next;
-      nextOrder = next;
-      return next;
-    });
-    return nextOrder;
-  }, []);
-
   const persistTaskOrder = React.useCallback(
     async (orderedIds: string[]) => {
       if (!activeListId || orderedIds.length === 0) {
@@ -315,66 +390,55 @@ export default function TasksScreen() {
     [activeListId, reloadActiveTasks],
   );
 
-  const moveTaskFromPoint = React.useCallback(
-    (sourceId: string, clientX: number, clientY: number) => {
-      const element = document.elementFromPoint(clientX, clientY) as HTMLElement | null;
-      const taskCard = element?.closest('[data-task-id]') as HTMLElement | null;
-      const targetId = taskCard?.dataset.taskId;
-      if (targetId) {
-        moveTask(sourceId, targetId);
-      }
-    },
-    [moveTask],
-  );
-
   const handleArchiveSelect = React.useCallback(
     (listId: string) => {
       setIsLocked(false);
       setNewTaskText('');
       setSelectedPriority('normal');
       setNewSessionError(null);
-      setDraggedTaskId(null);
+      setActiveDragId(null);
       selectList(listId);
     },
     [selectList, setNewTaskText],
   );
 
-  const handlePointerDragStart = React.useCallback(
-    (taskId: string, event: React.PointerEvent<HTMLButtonElement>) => {
-      if (event.pointerType === 'mouse' && event.button !== 0) {
-        return;
-      }
-      event.preventDefault();
-      setDraggedTaskId(taskId);
-      event.currentTarget.setPointerCapture(event.pointerId);
-    },
-    [],
-  );
+  const handleDragStart = React.useCallback((event: DragStartEvent) => {
+    setActiveDragId(String(event.active.id));
+  }, []);
 
-  const handlePointerDragMove = React.useCallback(
-    (taskId: string, event: React.PointerEvent<HTMLButtonElement>) => {
-      if (draggedTaskId !== taskId) {
-        return;
-      }
-      event.preventDefault();
-      moveTaskFromPoint(taskId, event.clientX, event.clientY);
-    },
-    [draggedTaskId, moveTaskFromPoint],
-  );
+  const handleDragEnd = React.useCallback(
+    async (event: DragEndEvent) => {
+      const { active, over } = event;
+      setActiveDragId(null);
 
-  const handlePointerDragEnd = React.useCallback(
-    async (taskId: string, event: React.PointerEvent<HTMLButtonElement>) => {
-      if (draggedTaskId !== taskId) {
+      if (!over) {
         return;
       }
-      event.preventDefault();
-      if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-        event.currentTarget.releasePointerCapture(event.pointerId);
+
+      const activeId = String(active.id);
+      const overId = String(over.id);
+      if (activeId === overId) {
+        return;
       }
-      await persistTaskOrder(orderedTaskIdsRef.current);
-      setDraggedTaskId(null);
+
+      let nextOrder: string[] | null = null;
+      setOrderedTaskIds((previous) => {
+        const oldIndex = previous.indexOf(activeId);
+        const newIndex = previous.indexOf(overId);
+        if (oldIndex === -1 || newIndex === -1) {
+          return previous;
+        }
+        const reordered = arrayMove(previous, oldIndex, newIndex);
+        orderedTaskIdsRef.current = reordered;
+        nextOrder = reordered;
+        return reordered;
+      });
+
+      if (nextOrder) {
+        await persistTaskOrder(nextOrder);
+      }
     },
-    [draggedTaskId, persistTaskOrder],
+    [persistTaskOrder],
   );
 
   return (
@@ -668,96 +732,44 @@ export default function TasksScreen() {
               {addTaskError ? <p className="mt-3 text-sm text-red-300">{addTaskError}</p> : null}
             </div>
 
-            <div className="space-y-5">
-              {groups.length === 0 ? (
-                <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-6 text-sm text-white/55">
-                  No tasks yet. Add your first item above.
-                </div>
-              ) : null}
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragStart={handleDragStart}
+              onDragEnd={(event) => {
+                void handleDragEnd(event);
+              }}
+            >
+              <SortableContext items={orderedTaskIds} strategy={verticalListSortingStrategy}>
+                <div className="space-y-5">
+                  {groups.length === 0 ? (
+                    <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-6 text-sm text-white/55">
+                      No tasks yet. Add your first item above.
+                    </div>
+                  ) : null}
 
-              {groups.map((group) => (
-                <section key={group.label}>
-                  <div className="mb-2 text-xs font-semibold tracking-[0.25em] text-white/50">{group.label}</div>
+                  {groups.map((group) => (
+                    <section key={group.label}>
+                      <div className="mb-2 text-xs font-semibold tracking-[0.25em] text-white/50">{group.label}</div>
 
-                  <div className="space-y-2">
-                    {group.items.map((task) => (
-                      <div
-                        key={task.id}
-                        data-task-id={task.id}
-                        className={[
-                          'draggable-row flex items-center gap-3 rounded-2xl border border-white/10 bg-black/30 px-4 py-3',
-                          draggedTaskId === task.id ? 'opacity-60' : '',
-                          task.done ? 'opacity-80' : '',
-                        ].join(' ')}
-                      >
-                        <label className="flex min-h-[48px] min-w-[48px] items-center justify-center p-1">
-                          <input
-                            type="checkbox"
-                            checked={task.done}
-                            onChange={() => {
-                              void toggleTask(task.id, task.done);
+                      <div className="space-y-2">
+                        {group.items.map((task) => (
+                          <SortableTaskCard
+                            key={task.id}
+                            task={task}
+                            canEdit={canEdit}
+                            isActiveDrag={activeDragId === task.id}
+                            onToggleTask={(taskId, currentStatus) => {
+                              void toggleTask(taskId, currentStatus);
                             }}
-                            className="h-6 w-6 accent-blue-500"
                           />
-                        </label>
-
-                        <div className="flex-1">
-                          <div className={task.done ? 'line-through text-white/45' : ''}>{task.title}</div>
-                          <div className="mt-2 text-xs text-white/55">
-                            {task.time ? `@ ${formatDisplayTime(task.time)}` : '-'}
-                            <span className="mx-2">|</span>
-                            <span
-                              className={[
-                                task.priority === 'high'
-                                  ? 'text-[color:var(--priority-high)]'
-                                  : task.priority === 'normal'
-                                    ? 'text-[color:var(--priority-normal)]'
-                                    : 'text-[color:var(--priority-low)]',
-                              ].join(' ')}
-                            >
-                              {task.priority.toUpperCase()}
-                            </span>
-                            {task.done ? (
-                              <>
-                                <span className="mx-2">|</span>
-                                <span className="text-[color:var(--state-completed)]">COMPLETED</span>
-                              </>
-                            ) : null}
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-1">
-                          <button
-                            type="button"
-                            draggable={false}
-                            onMouseDown={(event) => {
-                              event.preventDefault();
-                            }}
-                            onPointerDown={(event) => {
-                              handlePointerDragStart(task.id, event);
-                            }}
-                            onPointerMove={(event) => {
-                              handlePointerDragMove(task.id, event);
-                            }}
-                            onPointerUp={(event) => {
-                              void handlePointerDragEnd(task.id, event);
-                            }}
-                            onPointerCancel={(event) => {
-                              void handlePointerDragEnd(task.id, event);
-                            }}
-                            aria-label="Drag to reorder task"
-                            className="drag-handle min-h-[48px] min-w-[48px] cursor-grab rounded-lg border border-white/10 bg-white/5 p-2 text-white/65 active:scale-95 active:cursor-grabbing touch-none select-none"
-                            style={{ touchAction: 'none' }}
-                          >
-                            <GripVertical size={14} />
-                          </button>
-                        </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
-                </section>
-              ))}
-            </div>
+                    </section>
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
           </main>
         </div>
 
