@@ -260,14 +260,14 @@ function SortableTaskCard({
           className={[
             'block',
             isExpanded ? 'whitespace-normal break-words' : 'truncate',
-            task.done ? 'line-through text-white/45' : '',
+            task.done ? 'line-through text-text-tertiary' : '',
           ].join(' ')}
         >
           {task.title}
         </div>
-        <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-white/55">
+        <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-meta font-mono tracking-wide text-text-secondary">
           <span>{task.time ? `@ ${formatDisplayTime(task.time)}` : '-'}</span>
-          <span className="text-white/30">|</span>
+          <span className="text-text-tertiary">|</span>
           <span
             className={
               task.priority === 'high'
@@ -281,7 +281,7 @@ function SortableTaskCard({
           </span>
           {task.done ? (
             <>
-              <span className="text-white/30">|</span>
+              <span className="text-text-tertiary">|</span>
               <span className="text-[color:var(--state-completed)]">COMPLETED</span>
             </>
           ) : null}
@@ -526,7 +526,7 @@ export default function TasksScreen() {
   );
 
   return (
-    <div className="min-h-dvh bg-black text-white overflow-x-hidden">
+    <div className="min-h-dvh bg-black text-text-primary overflow-x-hidden">
       <div className="mx-auto max-w-5xl px-5 pb-10 pt-8">
         <header className="mb-8">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
@@ -589,7 +589,7 @@ export default function TasksScreen() {
 
                 <div
                   className={[
-                    'rounded-full border px-3 py-1 text-xs font-semibold tracking-wide',
+                    'rounded-full border px-3 py-1 text-label font-sans uppercase tracking-widest font-semibold',
                     sessionStatus === 'COMPLETE'
                       ? 'border-[color:var(--state-completed)]/50 text-[color:var(--state-completed)] bg-emerald-500/10'
                       : sessionStatus === 'IN PROGRESS'
@@ -600,7 +600,7 @@ export default function TasksScreen() {
                   {sessionStatus}
                 </div>
 
-                <div className="text-white/80">
+                <div className="text-meta font-mono tracking-wide text-text-secondary">
                   {total} tasks | {high} high priority | {scheduled} scheduled
                 </div>
               </div>
@@ -609,8 +609,8 @@ export default function TasksScreen() {
                 <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
                   <div className="text-label font-sans uppercase tracking-widest font-semibold text-text-tertiary">COMPLETION</div>
                   <div className="mt-1 flex items-baseline justify-between">
-                    <div className="text-2xl font-bold">{pct}%</div>
-                    <div className="text-sm text-white/60">
+                    <div className="text-[2.25rem] font-bold tracking-tight text-text-primary">{pct}%</div>
+                    <div className="text-meta font-mono tracking-wide text-text-secondary">
                       {done}/{total}
                     </div>
                   </div>
@@ -622,8 +622,8 @@ export default function TasksScreen() {
                 <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
                   <div className="text-label font-sans uppercase tracking-widest font-semibold text-text-tertiary">WEIGHTED</div>
                   <div className="mt-1 flex items-baseline justify-between">
-                    <div className="text-2xl font-bold">{weightedPct}%</div>
-                    <div className="text-sm text-white/60">
+                    <div className="text-[2.25rem] font-bold tracking-tight text-text-primary">{weightedPct}%</div>
+                    <div className="text-meta font-mono tracking-wide text-text-secondary">
                       {pointsDone}/{pointsTotal}
                     </div>
                   </div>
@@ -635,10 +635,10 @@ export default function TasksScreen() {
                 <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
                   <div className="text-label font-sans uppercase tracking-widest font-semibold text-text-tertiary">SCHEDULED</div>
                   <div className="mt-1 flex items-baseline justify-between">
-                    <div className="text-2xl font-bold">{scheduled}</div>
-                    <div className="text-sm text-white/60">items</div>
+                    <div className="text-[2.25rem] font-bold tracking-tight text-text-primary">{scheduled}</div>
+                    <div className="text-meta font-mono tracking-wide text-text-secondary">items</div>
                   </div>
-                  <div className="mt-2 text-sm text-white/60">Only tasks with a time appear on the rail.</div>
+                  <div className="mt-2 text-meta font-mono tracking-wide text-text-secondary">Only tasks with a time appear on the rail.</div>
                 </div>
               </div>
             </div>
@@ -694,7 +694,7 @@ export default function TasksScreen() {
               <button
                 type="button"
                 onClick={() => setIsScheduleOpen((value) => !value)}
-                className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-semibold text-white/75 md:hidden"
+                className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-label font-sans uppercase tracking-widest font-semibold text-text-secondary md:hidden"
               >
                 {isScheduleOpen ? 'Hide' : `Show (${scheduled})`}
               </button>
@@ -708,7 +708,7 @@ export default function TasksScreen() {
 
                 return (
                   <div key={hour} className="flex items-start gap-3">
-                    <div className="w-11 shrink-0 pt-1 text-xs text-white/75">{label}</div>
+                    <div className="w-11 shrink-0 pt-1 text-label font-mono tracking-wide text-text-tertiary">{label}</div>
 
                     <div
                       className={[
@@ -728,8 +728,8 @@ export default function TasksScreen() {
                               className="rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm"
                             >
                               <div className="flex items-center justify-between gap-3">
-                                <div className={task.done ? 'line-through text-white/45' : ''}>{task.title}</div>
-                                <div className="text-xs text-white/45">{formatDisplayTime(task.time!)}</div>
+                                <div className={task.done ? 'line-through text-text-tertiary' : ''}>{task.title}</div>
+                                <div className="text-meta font-mono tracking-wide text-text-secondary">{formatDisplayTime(task.time!)}</div>
                               </div>
                             </div>
                           ))}
@@ -800,7 +800,7 @@ export default function TasksScreen() {
                     disabled={!canEdit}
                     onClick={() => setSelectedPriority(priority)}
                     className={[
-                      'rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wide',
+                      'rounded-full border px-3 py-1 text-label font-sans uppercase tracking-widest font-semibold',
                       selectedPriority === priority
                         ? priority === 'high'
                           ? 'border-[color:var(--priority-high)]/60 text-[color:var(--priority-high)] bg-red-500/10'
@@ -863,14 +863,14 @@ export default function TasksScreen() {
         <div className="mt-7 rounded-3xl border border-white/10 bg-white/5 p-4">
           <div className="flex items-center justify-between">
             <div className="text-label font-sans uppercase tracking-widest font-semibold text-text-tertiary">ARCHIVED LOGS</div>
-            <div className="text-xs text-[color:var(--state-archived)]">{lists.length} total sessions</div>
+            <div className="text-label font-sans uppercase tracking-widest font-semibold text-text-tertiary">{lists.length} total sessions</div>
           </div>
 
           <div className="mt-3 flex items-center gap-3 rounded-2xl border border-white/10 bg-black/30 px-4 py-3">
             <input placeholder="Search history..." className="flex-1 bg-transparent text-base outline-none placeholder:text-white/30" />
           </div>
 
-          <div className="mt-4 space-y-2 text-sm text-white/45">
+          <div className="mt-4 space-y-2 text-meta font-mono tracking-wide text-text-secondary">
             {lists.slice(0, 6).map((list) => (
               <button
                 key={list.id}
@@ -883,8 +883,8 @@ export default function TasksScreen() {
                     : 'border-white/10 text-[color:var(--state-archived)] hover:bg-black/50',
                 ].join(' ')}
               >
-                <div className="truncate font-medium text-white/95">{list.title}</div>
-                <div className="mt-1 text-xs text-white/60">
+                <div className="truncate text-task font-medium text-text-primary">{list.title}</div>
+                <div className="mt-1 text-meta font-mono tracking-wide text-text-secondary">
                   {(() => {
                     const stats = listStatsById[list.id];
                     if (!stats) {
@@ -900,7 +900,7 @@ export default function TasksScreen() {
               </button>
             ))}
             {lists.length === 0 ? <div>No archived sessions yet.</div> : null}
-            {lists.length > 6 ? <div className="text-xs text-white/35">Showing latest 6 sessions.</div> : null}
+            {lists.length > 6 ? <div className="text-label font-sans uppercase tracking-widest font-semibold text-text-tertiary">Showing latest 6 sessions.</div> : null}
           </div>
         </div>
       </div>
