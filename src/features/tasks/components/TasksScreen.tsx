@@ -5,7 +5,7 @@ import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core';
 import { DndContext, MouseSensor, TouchSensor, closestCenter, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { GripVertical, Trash2 } from 'lucide-react';
+import { ChevronDown, GripVertical, Trash2 } from 'lucide-react';
 import { OppMark } from '@/components/OppMark';
 
 import { APP_CONFIG } from '@/config/app';
@@ -361,6 +361,7 @@ export default function TasksScreen() {
   const [orderSavedToast, setOrderSavedToast] = React.useState(false);
   const [newSessionError, setNewSessionError] = React.useState<string | null>(null);
   const [isScheduleOpen, setIsScheduleOpen] = React.useState(false);
+  const [isArchivedLogsOpen, setIsArchivedLogsOpen] = React.useState(false);
   const [orderedTaskIds, setOrderedTaskIds] = React.useState<string[]>([]);
   const [activeDragId, setActiveDragId] = React.useState<string | null>(null);
   const orderedTaskIdsRef = React.useRef<string[]>([]);
@@ -863,45 +864,60 @@ export default function TasksScreen() {
         <div className="mt-7 rounded-3xl border border-white/10 bg-white/5 p-4">
           <div className="flex items-center justify-between">
             <div className="text-label font-sans uppercase tracking-widest font-semibold text-text-tertiary">ARCHIVED LOGS</div>
-            <div className="text-label font-sans uppercase tracking-widest font-semibold text-text-tertiary">{lists.length} total sessions</div>
+            <button
+              type="button"
+              onClick={() => setIsArchivedLogsOpen((value) => !value)}
+              aria-expanded={isArchivedLogsOpen}
+              className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-label font-sans uppercase tracking-widest font-semibold text-text-secondary hover:text-text-primary"
+            >
+              <span>{isArchivedLogsOpen ? 'Hide' : `Show (${lists.length})`}</span>
+              <ChevronDown
+                size={14}
+                className={['transition-transform duration-200', isArchivedLogsOpen ? 'rotate-180' : 'rotate-0'].join(' ')}
+              />
+            </button>
           </div>
 
-          <div className="mt-3 flex items-center gap-3 rounded-2xl border border-white/10 bg-black/30 px-4 py-3">
-            <input placeholder="Search history..." className="flex-1 bg-transparent text-task outline-none placeholder:text-white/30" />
-          </div>
+          {isArchivedLogsOpen ? (
+            <>
+              <div className="mt-3 flex items-center gap-3 rounded-2xl border border-white/10 bg-black/30 px-4 py-3">
+                <input placeholder="Search history..." className="flex-1 bg-transparent text-task outline-none placeholder:text-white/30" />
+              </div>
 
-          <div className="mt-4 space-y-2 text-meta font-mono tracking-wide text-text-secondary">
-            {lists.slice(0, 6).map((list) => (
-              <button
-                key={list.id}
-                type="button"
-                onClick={() => handleArchiveSelect(list.id)}
-                className={[
-                  'block w-full rounded-xl border bg-black/30 px-3 py-2.5 text-left transition-colors',
-                  activeListId === list.id
-                    ? 'border-[color:var(--state-active)]/80 bg-blue-500/10 text-text-primary shadow-[inset_0_0_0_1px_rgba(96,165,250,0.25)]'
-                    : 'border-white/10 text-[color:var(--state-archived)] hover:bg-black/50',
-                ].join(' ')}
-              >
-                <div className="truncate text-task font-medium text-text-primary">{list.title}</div>
-                <div className="mt-1 text-meta font-mono tracking-wide text-text-secondary">
-                  {(() => {
-                    const stats = listStatsById[list.id];
-                    if (!stats) {
-                      return `${new Date(list.created_at).toLocaleDateString('en-US', {
-                        weekday: 'short',
-                        month: 'short',
-                        day: 'numeric',
-                      })} | --% | -- tasks | updated ${formatModifiedDate(list.created_at)}`;
-                    }
-                    return `${stats.completionPct}% complete | ${stats.totalTasks} tasks | updated ${formatModifiedDate(stats.modifiedAt)}`;
-                  })()}
-                </div>
-              </button>
-            ))}
-            {lists.length === 0 ? <div>No archived sessions yet.</div> : null}
-            {lists.length > 6 ? <div className="text-label font-sans uppercase tracking-widest font-semibold text-text-tertiary">Showing latest 6 sessions.</div> : null}
-          </div>
+              <div className="mt-4 space-y-2 text-meta font-mono tracking-wide text-text-secondary">
+                {lists.slice(0, 6).map((list) => (
+                  <button
+                    key={list.id}
+                    type="button"
+                    onClick={() => handleArchiveSelect(list.id)}
+                    className={[
+                      'block w-full rounded-xl border bg-black/30 px-3 py-2.5 text-left transition-colors',
+                      activeListId === list.id
+                        ? 'border-[color:var(--state-active)]/80 bg-blue-500/10 text-text-primary shadow-[inset_0_0_0_1px_rgba(96,165,250,0.25)]'
+                        : 'border-white/10 text-[color:var(--state-archived)] hover:bg-black/50',
+                    ].join(' ')}
+                  >
+                    <div className="truncate text-task font-medium text-text-primary">{list.title}</div>
+                    <div className="mt-1 text-meta font-mono tracking-wide text-text-secondary">
+                      {(() => {
+                        const stats = listStatsById[list.id];
+                        if (!stats) {
+                          return `${new Date(list.created_at).toLocaleDateString('en-US', {
+                            weekday: 'short',
+                            month: 'short',
+                            day: 'numeric',
+                          })} | --% | -- tasks | updated ${formatModifiedDate(list.created_at)}`;
+                        }
+                        return `${stats.completionPct}% complete | ${stats.totalTasks} tasks | updated ${formatModifiedDate(stats.modifiedAt)}`;
+                      })()}
+                    </div>
+                  </button>
+                ))}
+                {lists.length === 0 ? <div>No archived sessions yet.</div> : null}
+                {lists.length > 6 ? <div className="text-label font-sans uppercase tracking-widest font-semibold text-text-tertiary">Showing latest 6 sessions.</div> : null}
+              </div>
+            </>
+          ) : null}
         </div>
       </div>
     </div>
