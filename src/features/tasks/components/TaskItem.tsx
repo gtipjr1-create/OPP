@@ -93,7 +93,7 @@ export default function TaskItem({
             className="absolute inset-0 flex items-center justify-end pr-6 bg-red-600 rounded-2xl"
             style={{ opacity: revealOpacity }}
           >
-            <Trash2 className="text-white" size={24} />
+            <Trash2 className="text-text-primary" size={24} />
           </div>
 
           <div
@@ -113,7 +113,7 @@ export default function TaskItem({
             onClick={() => !isEditing && !confirmDelete && toggleTask(task.id, task.is_done)}
           >
             {task.is_done ? (
-              <CheckCircle2 size={32} className="text-blue-500 shrink-0" />
+              <CheckCircle2 size={32} className="text-text-accent shrink-0" />
             ) : (
               <Circle size={32} className="text-zinc-700 shrink-0" />
             )}
@@ -130,11 +130,11 @@ export default function TaskItem({
                     }
                   }}
                   onClick={(event) => event.stopPropagation()}
-                  className="w-full py-1 text-2xl font-bold text-white bg-transparent border-b-2 border-blue-500 outline-none"
+                  className="w-full py-1 text-task font-medium text-text-primary bg-transparent border-b-2 border-blue-500 outline-none"
                 />
               ) : (
                 <span
-                  className={`block text-2xl font-bold transition-all ${
+                  className={`block text-task font-medium transition-all ${
                     task.is_done ? 'line-through decoration-blue-500 decoration-4 text-zinc-600' : ''
                   }`}
                 >
@@ -146,7 +146,7 @@ export default function TaskItem({
             <div className="flex items-center gap-2 transition-opacity opacity-0 group-hover:opacity-100">
               <button
                 onClick={(event) => startEditing(task.id, event)}
-                className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-zinc-500 hover:bg-zinc-800 hover:text-blue-400"
+                className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-text-tertiary hover:bg-white/5 hover:text-text-accent"
               >
                 <ListChecks size={20} />
               </button>
@@ -155,13 +155,13 @@ export default function TaskItem({
                 <div className="flex items-center gap-2">
                   <button
                     onClick={cancelDeleteConfirm}
-                    className="min-h-[44px] rounded-lg border border-white/10 bg-white/5 px-3 text-xs font-semibold text-white/80 hover:bg-white/10"
+                    className="min-h-[44px] rounded-lg border border-white/10 bg-white/5 px-3 text-label font-sans uppercase tracking-widest font-semibold text-text-secondary hover:bg-white/10"
                   >
                     Cancel
                   </button>
                   <button
                     onClick={confirmDeleteNow}
-                    className="min-h-[44px] rounded-lg bg-red-500/20 px-3 text-xs font-semibold text-red-200 hover:bg-red-500/30"
+                    className="min-h-[44px] rounded-lg bg-red-500/20 px-3 text-label font-sans uppercase tracking-widest font-semibold text-red-200 hover:bg-red-500/30"
                   >
                     Delete
                   </button>

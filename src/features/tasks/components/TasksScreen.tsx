@@ -294,7 +294,7 @@ function SortableTaskCard({
             type="button"
             onClick={cancelConfirmDelete}
             disabled={isDeleting}
-            className="min-h-[40px] shrink-0 whitespace-nowrap rounded-lg border border-white/10 bg-white/5 px-3 text-xs font-semibold text-white/80 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
+            className="min-h-[40px] shrink-0 whitespace-nowrap rounded-lg border border-white/10 bg-white/5 px-3 text-label font-sans uppercase tracking-widest font-semibold text-text-secondary hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
           >
             Cancel
           </button>
@@ -302,7 +302,7 @@ function SortableTaskCard({
             type="button"
             onClick={confirmAndDelete}
             disabled={isDeleting}
-            className="min-h-[40px] shrink-0 whitespace-nowrap rounded-lg bg-red-500/20 px-3 text-xs font-semibold text-red-200 hover:bg-red-500/30 disabled:cursor-not-allowed disabled:opacity-40"
+            className="min-h-[40px] shrink-0 whitespace-nowrap rounded-lg bg-red-500/20 px-3 text-label font-sans uppercase tracking-widest font-semibold text-red-200 hover:bg-red-500/30 disabled:cursor-not-allowed disabled:opacity-40"
           >
             {isDeleting ? '...' : 'Delete'}
           </button>
@@ -313,7 +313,7 @@ function SortableTaskCard({
             type="button"
             onClick={openConfirmDelete}
             disabled={!canEdit || isDeleting}
-            className="min-h-[42px] min-w-[42px] rounded-lg border border-white/10 bg-white/5 p-2 text-white/50 hover:bg-white/10 hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-40 sm:min-h-[44px] sm:min-w-[44px]"
+            className="min-h-[42px] min-w-[42px] rounded-lg border border-white/10 bg-white/5 p-2 text-text-tertiary hover:bg-white/10 hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-40 sm:min-h-[44px] sm:min-w-[44px]"
             aria-label="Delete task"
           >
             <Trash2 size={14} />
@@ -325,7 +325,7 @@ function SortableTaskCard({
             {...listeners}
             disabled={!canEdit}
             aria-label="Drag to reorder task"
-            className="drag-handle min-h-[42px] min-w-[42px] cursor-grab rounded-lg border border-white/10 bg-white/5 p-2 text-white/65 active:scale-95 active:cursor-grabbing touch-none select-none disabled:cursor-not-allowed disabled:opacity-40 sm:min-h-[44px] sm:min-w-[44px]"
+            className="drag-handle min-h-[42px] min-w-[42px] cursor-grab rounded-lg border border-white/10 bg-white/5 p-2 text-text-secondary active:scale-95 active:cursor-grabbing touch-none select-none disabled:cursor-not-allowed disabled:opacity-40 sm:min-h-[44px] sm:min-w-[44px]"
             style={{ touchAction: 'none' }}
           >
             <GripVertical size={14} />
@@ -565,7 +565,7 @@ export default function TasksScreen() {
                     }}
                     className={[
                       'mt-3 text-left text-title font-sans uppercase tracking-tight font-bold text-text-primary',
-                      canEdit ? 'opacity-100 hover:text-blue-300' : 'opacity-70',
+                      canEdit ? 'opacity-100 hover:text-text-accent' : 'opacity-70',
                     ].join(' ')}
                   >
                     {activeTitle}
@@ -573,7 +573,7 @@ export default function TasksScreen() {
                 )}
               </div>
 
-              <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-white/70">
+              <div className="mt-2 flex flex-wrap items-center gap-3 text-meta font-mono tracking-wide text-text-secondary">
                 <div className="rounded-full border border-white/10 bg-white/5 px-3 py-1">{getTodayLabel()}</div>
 
                 <button
@@ -581,7 +581,7 @@ export default function TasksScreen() {
                   onClick={() => setIsLocked((value) => !value)}
                   className={[
                     'rounded-full border px-3 py-1',
-                    isLocked ? 'border-white/10 bg-white/5 text-white/70' : 'border-blue-500/40 bg-blue-500/10 text-blue-200',
+                    isLocked ? 'border-white/10 bg-white/5 text-text-secondary' : 'border-blue-500/40 bg-blue-500/10 text-text-accent',
                   ].join(' ')}
                 >
                   {isLocked ? 'LOCKED' : 'UNLOCKED'}
@@ -675,13 +675,13 @@ export default function TasksScreen() {
           </div>
 
           {newSessionError ? (
-            <div className="mt-4 rounded-2xl border border-red-400/45 bg-red-500/15 px-4 py-3 text-sm text-red-100">
+            <div className="mt-4 rounded-2xl border border-red-400/45 bg-red-500/15 px-4 py-3 text-meta font-mono tracking-wide text-red-100">
               New Session failed: {newSessionError}
             </div>
           ) : null}
 
           {orderSavedToast ? (
-            <div className="mt-4 rounded-2xl border border-emerald-400/40 bg-emerald-500/15 px-4 py-2 text-sm text-emerald-100">
+            <div className="mt-4 rounded-2xl border border-emerald-400/40 bg-emerald-500/15 px-4 py-2 text-meta font-mono tracking-wide text-emerald-100">
               Order saved
             </div>
           ) : null}
@@ -725,7 +725,7 @@ export default function TasksScreen() {
                           {slotTasks.map((task) => (
                             <div
                               key={task.id}
-                              className="rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm"
+                              className="rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-meta font-mono tracking-wide"
                             >
                               <div className="flex items-center justify-between gap-3">
                                 <div className={task.done ? 'line-through text-text-tertiary' : ''}>{task.title}</div>
@@ -778,14 +778,14 @@ export default function TasksScreen() {
                     }
                   }}
                   placeholder="Add task...  (use @6pm or @6:30pm, #high)"
-                  className="min-h-[48px] w-full flex-1 bg-transparent text-base outline-none placeholder:text-white/40"
+                  className="min-h-[48px] w-full flex-1 bg-transparent text-task outline-none placeholder:text-white/40"
                 />
                 <button
                   type="submit"
                   disabled={!canEdit || !newTaskText.trim()}
                   className={[
-                    'min-h-[44px] w-full rounded-xl px-4 py-2 text-sm font-semibold sm:w-auto',
-                    canEdit ? 'bg-white text-black hover:opacity-90' : 'bg-white/20 text-white/50',
+                    'min-h-[44px] w-full rounded-xl px-4 py-2 text-label font-sans uppercase tracking-widest font-semibold sm:w-auto',
+                    canEdit ? 'bg-white text-black hover:opacity-90' : 'bg-white/20 text-text-tertiary',
                   ].join(' ')}
                 >
                   Add
@@ -815,7 +815,7 @@ export default function TasksScreen() {
                 ))}
               </div>
 
-              {addTaskError ? <p className="mt-3 text-sm text-red-300">{addTaskError}</p> : null}
+              {addTaskError ? <p className="mt-3 text-meta font-mono tracking-wide text-red-300">{addTaskError}</p> : null}
             </div>
 
             <DndContext
@@ -829,7 +829,7 @@ export default function TasksScreen() {
               <SortableContext items={orderedTaskIds} strategy={verticalListSortingStrategy}>
                 <div className="space-y-5">
                   {groups.length === 0 ? (
-                    <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-6 text-sm text-white/55">
+                    <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-6 text-meta font-mono tracking-wide text-text-secondary">
                       No tasks yet. Add your first item above.
                     </div>
                   ) : null}
@@ -867,7 +867,7 @@ export default function TasksScreen() {
           </div>
 
           <div className="mt-3 flex items-center gap-3 rounded-2xl border border-white/10 bg-black/30 px-4 py-3">
-            <input placeholder="Search history..." className="flex-1 bg-transparent text-base outline-none placeholder:text-white/30" />
+            <input placeholder="Search history..." className="flex-1 bg-transparent text-task outline-none placeholder:text-white/30" />
           </div>
 
           <div className="mt-4 space-y-2 text-meta font-mono tracking-wide text-text-secondary">
@@ -879,7 +879,7 @@ export default function TasksScreen() {
                 className={[
                   'block w-full rounded-xl border bg-black/30 px-3 py-2.5 text-left transition-colors',
                   activeListId === list.id
-                    ? 'border-[color:var(--state-active)]/80 bg-blue-500/10 text-white shadow-[inset_0_0_0_1px_rgba(96,165,250,0.25)]'
+                    ? 'border-[color:var(--state-active)]/80 bg-blue-500/10 text-text-primary shadow-[inset_0_0_0_1px_rgba(96,165,250,0.25)]'
                     : 'border-white/10 text-[color:var(--state-archived)] hover:bg-black/50',
                 ].join(' ')}
               >
