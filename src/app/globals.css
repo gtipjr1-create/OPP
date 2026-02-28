@@ -1,4 +1,23 @@
+@import './opp-typography.css';
 @import "tailwindcss";
+
+@theme {
+  --font-sans: var(--font-geist-sans), 'SF Pro Display', sans-serif;
+  --font-mono: var(--font-geist-mono), 'SF Mono', monospace;
+
+  --text-hero:    3.5rem;
+  --text-title:   2rem;
+  --text-heading: 1.125rem;
+  --text-task:    1rem;
+  --text-meta:    0.8125rem;
+  --text-label:   0.6875rem;
+
+  --color-text-primary:   rgba(255,255,255,1.00);
+  --color-text-secondary: rgba(255,255,255,0.60);
+  --color-text-tertiary:  rgba(255,255,255,0.35);
+  --color-text-accent:    #4A9EFF;
+  --color-text-disabled:  rgba(255,255,255,0.20);
+}
 
 :root {
   --background: #ffffff;

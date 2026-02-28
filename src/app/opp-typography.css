@@ -1,0 +1,234 @@
+/* ============================================
+   OPP — Typography System
+   Premium & Refined · Next.js / Tailwind
+   ============================================ */
+
+/* --- 1. FONT IMPORT (Geist via next/font) ---
+   In your layout.tsx or _app.tsx:
+
+   import { Geist, Geist_Mono } from 'next/font/google'
+
+   const geist = Geist({
+     subsets: ['latin'],
+     variable: '--font-geist',
+   })
+
+   const geistMono = Geist_Mono({
+     subsets: ['latin'],
+     variable: '--font-geist-mono',
+   })
+
+   Apply to <html>:
+   className={`${geist.variable} ${geistMono.variable}`}
+------------------------------------------------ */
+
+
+/* --- 2. CSS CUSTOM PROPERTIES --- */
+:root {
+
+  /* Fonts */
+  --font-sans: var(--font-geist-sans), 'SF Pro Display', -apple-system, sans-serif;
+  --font-mono: var(--font-geist-mono), 'SF Mono', monospace;
+
+  /* Type Scale (mobile-first, rem) */
+  --text-hero:     3.5rem;    /* 56px  — OPP session title */
+  --text-title:    2rem;      /* 32px  — SATURDAY: 2/21/26 */
+  --text-heading:  1.125rem;  /* 18px  — card headings */
+  --text-body:     1rem;      /* 16px  — task titles */
+  --text-meta:     0.8125rem; /* 13px  — timestamps, tags */
+  --text-label:    0.6875rem; /* 11px  — section labels */
+
+  /* Font Weights */
+  --weight-black:    800;
+  --weight-bold:     700;
+  --weight-semibold: 600;
+  --weight-medium:   500;
+  --weight-regular:  400;
+
+  /* Letter Spacing */
+  --tracking-tight:  -0.03em;  /* hero titles */
+  --tracking-normal:  0em;
+  --tracking-wide:    0.06em;  /* body labels */
+  --tracking-widest:  0.12em;  /* section headers e.g. WORK STACK */
+
+  /* Line Heights */
+  --leading-none:    1;
+  --leading-tight:   1.15;
+  --leading-snug:    1.35;
+  --leading-normal:  1.5;
+  --leading-relaxed: 1.65;
+
+  /* Colors — type hierarchy */
+  --color-text-primary:   rgba(255, 255, 255, 1.00);   /* task titles, main values */
+  --color-text-secondary: rgba(255, 255, 255, 0.60);   /* metadata, timestamps */
+  --color-text-tertiary:  rgba(255, 255, 255, 0.35);   /* section labels, placeholders */
+  --color-text-accent:    #4A9EFF;                     /* OPP blue — NORMAL tags, highlights */
+  --color-text-disabled:  rgba(255, 255, 255, 0.20);
+
+}
+
+
+/* --- 3. BASE RESETS --- */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: var(--text-body);
+  font-weight: var(--weight-regular);
+  line-height: var(--leading-normal);
+  color: var(--color-text-primary);
+}
+
+
+/* --- 4. TYPE ROLES --- */
+
+/* Hero — "OPP" session name */
+.type-hero {
+  font-size: var(--text-hero);
+  font-weight: var(--weight-black);
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--leading-none);
+  color: var(--color-text-primary);
+}
+
+/* Accent within hero — "2026" */
+.type-hero-accent {
+  font-size: var(--text-hero);
+  font-weight: var(--weight-black);
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--leading-none);
+  color: var(--color-text-accent);
+}
+
+/* Title — "SATURDAY: 2/21/26" */
+.type-title {
+  font-size: var(--text-title);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--leading-tight);
+  color: var(--color-text-primary);
+  text-transform: uppercase;
+}
+
+/* Section Label — "WORK STACK", "ACTIVE SESSION" */
+.type-label {
+  font-size: var(--text-label);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-widest);
+  line-height: var(--leading-none);
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+}
+
+/* Task Title — "Work 8am to 4pm Sunday" */
+.type-task {
+  font-size: var(--text-body);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-normal);
+  line-height: var(--leading-snug);
+  color: var(--color-text-primary);
+}
+
+/* Metadata — "@ 4:00 PM | NORMAL", timestamps */
+.type-meta {
+  font-family: var(--font-mono);
+  font-size: var(--text-meta);
+  font-weight: var(--weight-regular);
+  letter-spacing: var(--tracking-wide);
+  line-height: var(--leading-none);
+  color: var(--color-text-secondary);
+}
+
+/* Tag — "NORMAL", "HIGH", "LOW", "IN PROGRESS" */
+.type-tag {
+  font-size: var(--text-label);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-widest);
+  line-height: var(--leading-none);
+  text-transform: uppercase;
+}
+
+.type-tag--active {
+  color: var(--color-text-accent);
+}
+
+.type-tag--inactive {
+  color: var(--color-text-tertiary);
+}
+
+/* Helper / Body copy — "Only tasks with a time appear on the rail." */
+.type-body {
+  font-size: var(--text-meta);
+  font-weight: var(--weight-regular);
+  letter-spacing: var(--tracking-normal);
+  line-height: var(--leading-relaxed);
+  color: var(--color-text-secondary);
+}
+
+/* Stat / Big Number — "0%", "1" */
+.type-stat {
+  font-size: 2.25rem; /* 36px */
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--leading-none);
+  color: var(--color-text-primary);
+}
+
+/* Schedule time rail — "6AM", "7AM" */
+.type-time {
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-wide);
+  color: var(--color-text-tertiary);
+}
+
+
+/* --- 5. TAILWIND CONFIG EQUIVALENT ---
+
+   In tailwind.config.ts, extend like this:
+
+   theme: {
+     extend: {
+       fontFamily: {
+         sans: ['var(--font-geist)', 'SF Pro Display', 'sans-serif'],
+         mono: ['var(--font-geist-mono)', 'SF Mono', 'monospace'],
+       },
+       fontSize: {
+         'hero':    ['3.5rem',    { lineHeight: '1',    letterSpacing: '-0.03em', fontWeight: '800' }],
+         'title':   ['2rem',      { lineHeight: '1.15', letterSpacing: '-0.03em', fontWeight: '700' }],
+         'heading': ['1.125rem',  { lineHeight: '1.35', letterSpacing: '0',       fontWeight: '600' }],
+         'task':    ['1rem',      { lineHeight: '1.35', letterSpacing: '0',       fontWeight: '500' }],
+         'meta':    ['0.8125rem', { lineHeight: '1',    letterSpacing: '0.06em',  fontWeight: '400' }],
+         'label':   ['0.6875rem', { lineHeight: '1',    letterSpacing: '0.12em',  fontWeight: '600' }],
+       },
+       colors: {
+         'text-primary':   'rgba(255,255,255,1.00)',
+         'text-secondary': 'rgba(255,255,255,0.60)',
+         'text-tertiary':  'rgba(255,255,255,0.35)',
+         'text-accent':    '#4A9EFF',
+         'text-disabled':  'rgba(255,255,255,0.20)',
+       },
+     },
+   }
+
+------------------------------------------------ */
+
+
+/* --- 6. QUICK REFERENCE CHEATSHEET ---
+
+   HERO TITLE          56px  800w  -0.03em  white 100%
+   PAGE DATE/TITLE     32px  700w  -0.03em  white 100%  uppercase
+   SECTION LABELS      11px  600w   0.12em  white  35%  uppercase
+   TASK TITLE          16px  500w   0em     white 100%
+   METADATA / TAGS     13px  400w   0.06em  white  60%  mono
+   STAT NUMBERS        36px  700w  -0.03em  white 100%
+   SCHEDULE TIMES      11px  500w   0.06em  white  35%  mono
+   BODY / HELPER       13px  400w   0em     white  60%
+   ACCENT (blue)       —     —      —       #4A9EFF
+
+------------------------------------------------ */

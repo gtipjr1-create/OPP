@@ -6,6 +6,7 @@ import { DndContext, MouseSensor, TouchSensor, closestCenter, useSensor, useSens
 import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, Trash2 } from 'lucide-react';
+import { OppMark } from '@/components/OppMark';
 
 import { APP_CONFIG } from '@/config/app';
 
@@ -530,14 +531,11 @@ export default function TasksScreen() {
         <header className="mb-8">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
             <div>
-              <div className="text-xs font-semibold tracking-[0.25em] text-blue-500/90">ACTIVE SESSION</div>
+              <div className="text-label font-sans uppercase tracking-widest font-semibold text-text-tertiary">ACTIVE SESSION</div>
 
               <div className="mt-3">
                 <div className="flex items-end gap-3">
-                  <h1 className="text-5xl font-extrabold tracking-tight sm:text-6xl md:text-7xl">
-                    {APP_CONFIG.shortName}
-                  </h1>
-                  <span className="mb-1 text-2xl font-black text-blue-400/90">{APP_CONFIG.yearMark}</span>
+                  <OppMark size={48} />
                 </div>
                 {isEditingTitle ? (
                   <input
@@ -553,7 +551,7 @@ export default function TasksScreen() {
                       }
                     }}
                     className={[
-                      'mt-3 w-full bg-transparent text-2xl font-bold tracking-tight outline-none md:text-3xl',
+                      'mt-3 w-full bg-transparent text-title font-sans uppercase tracking-tight font-bold text-text-primary outline-none',
                       canEdit ? 'opacity-100' : 'opacity-70',
                     ].join(' ')}
                   />
@@ -566,7 +564,7 @@ export default function TasksScreen() {
                       setTitleEdit(activeTitle);
                     }}
                     className={[
-                      'mt-3 text-left text-2xl font-bold tracking-tight md:text-3xl',
+                      'mt-3 text-left text-title font-sans uppercase tracking-tight font-bold text-text-primary',
                       canEdit ? 'opacity-100 hover:text-blue-300' : 'opacity-70',
                     ].join(' ')}
                   >
@@ -609,7 +607,7 @@ export default function TasksScreen() {
 
               <div className="mt-5 grid gap-3 sm:grid-cols-3">
                 <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
-                  <div className="text-xs font-semibold tracking-[0.2em] text-white/50">COMPLETION</div>
+                  <div className="text-label font-sans uppercase tracking-widest font-semibold text-text-tertiary">COMPLETION</div>
                   <div className="mt-1 flex items-baseline justify-between">
                     <div className="text-2xl font-bold">{pct}%</div>
                     <div className="text-sm text-white/60">
@@ -622,7 +620,7 @@ export default function TasksScreen() {
                 </div>
 
                 <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
-                  <div className="text-xs font-semibold tracking-[0.2em] text-white/50">WEIGHTED</div>
+                  <div className="text-label font-sans uppercase tracking-widest font-semibold text-text-tertiary">WEIGHTED</div>
                   <div className="mt-1 flex items-baseline justify-between">
                     <div className="text-2xl font-bold">{weightedPct}%</div>
                     <div className="text-sm text-white/60">
@@ -635,7 +633,7 @@ export default function TasksScreen() {
                 </div>
 
                 <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
-                  <div className="text-xs font-semibold tracking-[0.2em] text-white/50">SCHEDULED</div>
+                  <div className="text-label font-sans uppercase tracking-widest font-semibold text-text-tertiary">SCHEDULED</div>
                   <div className="mt-1 flex items-baseline justify-between">
                     <div className="text-2xl font-bold">{scheduled}</div>
                     <div className="text-sm text-white/60">items</div>
@@ -692,7 +690,7 @@ export default function TasksScreen() {
         <div className="grid gap-5 md:grid-cols-[208px_1fr]">
           <aside className="order-2 rounded-3xl border border-white/10 bg-white/5 p-4 md:order-1">
             <div className="mb-3 flex items-center justify-between">
-              <div className="text-xs font-semibold tracking-[0.25em] text-white/50">SCHEDULE</div>
+              <div className="text-label font-sans uppercase tracking-widest font-semibold text-text-tertiary">SCHEDULE</div>
               <button
                 type="button"
                 onClick={() => setIsScheduleOpen((value) => !value)}
@@ -746,7 +744,7 @@ export default function TasksScreen() {
 
           <main className="order-1 rounded-3xl border border-white/10 bg-white/5 p-4 md:order-2">
             <div className="mb-4">
-              <div className="text-xs font-semibold tracking-[0.25em] text-white/50">WORK STACK</div>
+              <div className="text-label font-sans uppercase tracking-widest font-semibold text-text-tertiary">WORK STACK</div>
 
               <form
                 action={async (formData) => {
@@ -838,7 +836,7 @@ export default function TasksScreen() {
 
                   {groups.map((group) => (
                     <section key={group.label}>
-                      <div className="mb-2 text-xs font-semibold tracking-[0.25em] text-white/50">{group.label}</div>
+                      <div className="mb-2 text-label font-sans uppercase tracking-widest font-semibold text-text-tertiary">{group.label}</div>
 
                       <div className="space-y-2">
                         {group.items.map((task) => (
@@ -864,7 +862,7 @@ export default function TasksScreen() {
 
         <div className="mt-7 rounded-3xl border border-white/10 bg-white/5 p-4">
           <div className="flex items-center justify-between">
-            <div className="text-xs font-semibold tracking-[0.25em] text-white/50">ARCHIVED LOGS</div>
+            <div className="text-label font-sans uppercase tracking-widest font-semibold text-text-tertiary">ARCHIVED LOGS</div>
             <div className="text-xs text-[color:var(--state-archived)]">{lists.length} total sessions</div>
           </div>
 
