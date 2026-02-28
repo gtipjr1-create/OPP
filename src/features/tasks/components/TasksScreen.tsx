@@ -777,7 +777,7 @@ export default function TasksScreen() {
                       setAddTaskError(null);
                     }
                   }}
-                  placeholder="Add task...  (use @6pm or @6:30pm, #high)"
+                  placeholder="Add task..."
                   className="min-h-[48px] w-full flex-1 bg-transparent text-task outline-none placeholder:text-white/40"
                 />
                 <button
@@ -829,7 +829,7 @@ export default function TasksScreen() {
               <SortableContext items={orderedTaskIds} strategy={verticalListSortingStrategy}>
                 <div className="space-y-5">
                   {groups.length === 0 ? (
-                    <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-6 text-meta font-mono tracking-wide text-text-secondary">
+                    <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-6 text-task font-medium text-text-secondary">
                       No tasks yet. Add your first item above.
                     </div>
                   ) : null}
