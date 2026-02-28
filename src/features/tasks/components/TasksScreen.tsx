@@ -655,19 +655,19 @@ export default function TasksScreen() {
                     setNewSessionError(process.env.NODE_ENV === 'development' ? message : 'Could not create session');
                   }
                 }}
-                className="min-h-[44px] w-full rounded-2xl border border-white/10 bg-white px-4 py-3 text-sm font-semibold text-black hover:opacity-90 sm:w-auto"
+                className="min-h-[44px] w-full rounded-2xl border border-white/10 bg-white px-4 py-3 text-label font-sans uppercase tracking-widest font-semibold text-black hover:opacity-90 sm:w-auto"
               >
                 New Session
               </button>
               <button
                 type="button"
-                className="min-h-[44px] w-full rounded-2xl border border-white/20 bg-transparent px-4 py-3 text-sm font-semibold text-white/80 hover:bg-white/5 hover:text-white sm:w-auto"
+                className="min-h-[44px] w-full rounded-2xl border border-white/20 bg-transparent px-4 py-3 text-label font-sans uppercase tracking-widest font-semibold text-text-secondary hover:bg-white/5 hover:text-text-primary sm:w-auto"
               >
                 Duplicate
               </button>
               <button
                 type="button"
-                className="min-h-[44px] w-full rounded-2xl border border-white/10 bg-transparent px-4 py-3 text-sm font-semibold text-white/55 hover:bg-white/5 hover:text-white/80 sm:w-auto"
+                className="min-h-[44px] w-full rounded-2xl border border-white/10 bg-transparent px-4 py-3 text-label font-sans uppercase tracking-widest font-semibold text-text-tertiary hover:bg-white/5 hover:text-text-secondary sm:w-auto"
               >
                 Export
               </button>
@@ -807,7 +807,7 @@ export default function TasksScreen() {
                           : priority === 'low'
                             ? 'border-[color:var(--priority-low)]/60 text-[color:var(--priority-low)] bg-white/10'
                             : 'border-[color:var(--priority-normal)]/60 text-[color:var(--priority-normal)] bg-blue-500/10'
-                        : 'border-white/10 text-white/45 hover:text-white/70',
+                        : 'border-white/10 text-text-tertiary hover:text-text-secondary',
                     ].join(' ')}
                   >
                     {priority}
