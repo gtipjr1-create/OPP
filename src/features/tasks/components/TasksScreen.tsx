@@ -726,11 +726,13 @@ export default function TasksScreen() {
                           {slotTasks.map((task) => (
                             <div
                               key={task.id}
-                              className="rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-meta font-mono tracking-wide"
+                              className="w-full max-w-full overflow-hidden rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-meta font-mono tracking-wide"
                             >
-                              <div className="flex items-center justify-between gap-3">
-                                <div className={task.done ? 'line-through text-text-tertiary' : ''}>{task.title}</div>
-                                <div className="text-meta font-mono tracking-wide text-text-secondary">{formatDisplayTime(task.time!)}</div>
+                              <div className="flex min-w-0 items-center justify-between gap-3">
+                                <div className={['min-w-0 truncate', task.done ? 'line-through text-text-tertiary' : ''].join(' ')}>
+                                  {task.title}
+                                </div>
+                                <div className="shrink-0 text-meta font-mono tracking-wide text-text-secondary">{formatDisplayTime(task.time!)}</div>
                               </div>
                             </div>
                           ))}
