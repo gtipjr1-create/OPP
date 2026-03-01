@@ -1,60 +1,110 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# OPP - Organized Persistent Plans
 
-## Getting Started
+OPP is a productivity and planning app for running focused daily sessions with structured tasks, priorities, and schedule visibility.
 
-First, run the development server:
+Live app: https://opp-psi.vercel.app
+
+## What's Implemented So Far
+
+### Core Product
+- Session-based planning workflow (active session + archived logs)
+- Task creation, editing, completion toggling, deletion
+- Drag-and-drop task reorder with persistence
+- Session lock/unlock behavior
+- Archived session browsing with collapse/expand controls
+
+### Task Semantics
+- Structured priority model (`high`, `normal`, `low`)
+- Tagged priority extraction support
+- Scheduled time/date parsing
+- Canonical semantics pipeline + migration-safe fallbacks
+
+### Schedule Rail
+- Hour rail with priority-based dots
+- Dot colors by explicit tagged priority:
+  - High = red
+  - Normal = blue
+  - Low = gray
+- Untagged tasks do not render schedule dots
+
+### UX and Accessibility
+- Inline task editing
+- Confirm-delete flow with exclusive render path (no layered UI bleed-through)
+- Improved mobile overflow handling for task rows
+- Focus-visible states, keyboard interaction improvements, ARIA labels, touch targets
+
+### Design System
+- Tailwind v4 token-based styling (`@theme` in globals)
+- OPP typography roles and color token usage
+- Shared UI primitives (`Button`, `Card`, `Input`, `SectionHeader`, `InlineNotice`, `LoadingMark`)
+- OppMark brand component and loading-state usage
+
+### Reliability and Hardening
+- Unit tests for core pure logic (parsing, scheduling, semantics)
+- Integration tests for task workflow state behavior
+- Playwright E2E smoke tests
+- Visual task-row checks (desktop + mobile)
+- Global error boundary
+- Centralized server/client telemetry logging
+- Error event IDs surfaced in UI notices for faster debugging
+
+### Delivery Process
+- CI workflow on PR/push:
+  - `npm run lint`
+  - `npm test`
+  - `npm run test:e2e`
+- PR template + release checklist + definition-of-done
+- Task row state matrix checklist
+- Weekly cleanup ritual docs
+
+## Tech Stack
+- Next.js (App Router)
+- React 19
+- Tailwind CSS v4
+- Supabase (Postgres + Auth + RLS)
+- DnD Kit
+- Framer Motion
+- Playwright
+- ESLint + TypeScript
+
+## Project Scripts
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm run build
+npm run start
+
+npm run lint
+npm run test
+
+npm run test:e2e
+npm run test:e2e:headed
+npm run test:e2e:ui
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Run Locally
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. Install dependencies:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm install
+```
 
-## Learn More
+2. Configure environment variables (Supabase/Auth as needed).
+3. Start app:
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm run dev
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Key Docs
+- `docs/typography.md`
+- `docs/ui-standards.md`
+- `docs/release-checklist.md`
+- `docs/definition-of-done.md`
+- `docs/task-row-state-matrix.md`
+- `docs/weekly-cleanup.md`
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-
-## In-IDE Preview (VS Code)
-
-Use this repo's built-in VS Code run configuration for one-click local preview.
-
-1. Press `F5` (Run and Debug) and choose `Next.js: Dev (F5)`.
-2. VS Code starts `npm run dev` and waits for the local URL.
-3. To stop, press `Shift+F5`.
-
-Fallback manual route:
-
-1. Run `npm run dev`.
-2. Open Command Palette (`Ctrl+Shift+P`) and run `Simple Browser: Show`.
-3. Enter `http://localhost:3000`.
-## Feature Template
-
-A starter structure for clean, scalable features is available in `src/features/_template`.
-
-- Copy `_template` to a new feature folder (for example `src/features/tasks`).
-- Rename `useTemplateFeature.ts` and `TemplatePanel.tsx` to feature names.
-- Keep data access in `service.ts`, types in `types.ts`, and UI in `components/`.
-- Re-export public parts through `index.ts`.
-
-Shared app-level table types are in `src/types/domain.ts`.
+## Notes
+- OPP is actively evolving through phased quality milestones (testing, accessibility, reliability, and release process hardening).
+- The app is currently optimized around the `tasks` feature set and session workflow.
