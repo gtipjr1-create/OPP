@@ -118,7 +118,7 @@ export default function TaskItem({
               <Circle size={32} className="text-text-tertiary shrink-0" />
             )}
 
-            <div className="flex-1">
+            <div className="min-w-0 flex-1">
               {isEditing ? (
                 <input
                   defaultValue={task.content}
@@ -135,7 +135,7 @@ export default function TaskItem({
               ) : (
                 <span
                   className={`block text-task font-medium transition-all ${
-                    task.is_done ? 'line-through decoration-blue-500 decoration-4 text-text-tertiary' : ''
+                    task.is_done ? 'truncate line-through decoration-blue-500 decoration-4 text-text-tertiary' : 'truncate'
                   }`}
                 >
                   {task.content}
