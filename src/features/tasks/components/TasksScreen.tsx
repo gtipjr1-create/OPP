@@ -10,6 +10,8 @@ import { OppMark } from '@/components/OppMark';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import Input from '@/components/ui/Input';
+import InlineNotice from '@/components/ui/InlineNotice';
+import LoadingMark from '@/components/ui/LoadingMark';
 import SectionHeader from '@/components/ui/SectionHeader';
 import ArchiveLogsPanel from './ArchiveLogsPanel';
 import ScheduleRail from './ScheduleRail';
@@ -354,6 +356,8 @@ export default function TasksScreen() {
     titleEdit,
     setTitleEdit,
     listStatsById,
+    errorMessage,
+    loading,
     activeTitle,
     reloadActiveTasks,
     createNewList,
@@ -365,6 +369,9 @@ export default function TasksScreen() {
   const [addTaskError, setAddTaskError] = React.useState<string | null>(null);
   const [orderSavedToast, setOrderSavedToast] = React.useState(false);
   const [newSessionError, setNewSessionError] = React.useState<string | null>(null);
+  const [isCreatingSession, setIsCreatingSession] = React.useState(false);
+  const [isAddingTask, setIsAddingTask] = React.useState(false);
+  const [isSavingOrder, setIsSavingOrder] = React.useState(false);
   const [isScheduleOpen, setIsScheduleOpen] = React.useState(false);
   const [isArchivedLogsOpen, setIsArchivedLogsOpen] = React.useState(false);
   const [orderedTaskIds, setOrderedTaskIds] = React.useState<string[]>([]);
@@ -474,6 +481,7 @@ export default function TasksScreen() {
       }
 
       try {
+        setIsSavingOrder(true);
         await reorderTaskPositionsAction(listId, orderedIds);
         setOrderSavedToast(true);
         window.setTimeout(() => {
@@ -483,6 +491,8 @@ export default function TasksScreen() {
         const message = error instanceof Error ? error.message : 'Could not save task order';
         setAddTaskError(process.env.NODE_ENV === 'development' ? message : 'Could not save task order');
         await reloadActiveTasks();
+      } finally {
+        setIsSavingOrder(false);
       }
     },
     [reloadActiveTasks],
@@ -553,10 +563,31 @@ export default function TasksScreen() {
     [reloadActiveTasks],
   );
 
+  if (loading) {
+    return (
+      <div className="min-h-dvh bg-black text-text-primary overflow-x-hidden">
+        <div className="mx-auto flex min-h-dvh max-w-5xl items-center justify-center px-5 pb-10 pt-8">
+          <LoadingMark label="Loading session..." size={32} />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-dvh bg-black text-text-primary overflow-x-hidden">
       <div className="mx-auto max-w-5xl px-5 pb-10 pt-8">
         <header className="mb-8">
+          {errorMessage ? (
+            <InlineNotice variant="error" className="mb-4">
+              {errorMessage}
+            </InlineNotice>
+          ) : null}
+          {isSavingOrder ? (
+            <InlineNotice variant="info" className="mb-4">
+              Saving order...
+            </InlineNotice>
+          ) : null}
+
           <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
             <div>
               <SectionHeader>ACTIVE SESSION</SectionHeader>
@@ -648,17 +679,21 @@ export default function TasksScreen() {
               <Button
                 variant="primary"
                 onClick={async () => {
+                  setIsCreatingSession(true);
                   setNewSessionError(null);
                   try {
                     await createNewList();
                   } catch (error) {
                     const message = error instanceof Error ? error.message : 'Could not create session';
                     setNewSessionError(process.env.NODE_ENV === 'development' ? message : 'Could not create session');
+                  } finally {
+                    setIsCreatingSession(false);
                   }
                 }}
+                disabled={isCreatingSession}
                 className="w-full sm:w-auto"
               >
-                New Session
+                {isCreatingSession ? 'Creating...' : 'New Session'}
               </Button>
               <Button variant="secondary" className="w-full sm:w-auto">
                 Duplicate
@@ -670,15 +705,15 @@ export default function TasksScreen() {
           </div>
 
           {newSessionError ? (
-            <div className="mt-4 rounded-2xl border border-red-400/45 bg-red-500/15 p-4 text-meta font-mono tracking-wide text-red-100">
+            <InlineNotice variant="error" className="mt-4">
               New Session failed: {newSessionError}
-            </div>
+            </InlineNotice>
           ) : null}
 
           {orderSavedToast ? (
-            <div className="mt-4 rounded-2xl border border-emerald-400/40 bg-emerald-500/15 p-4 text-meta font-mono tracking-wide text-emerald-100">
+            <InlineNotice variant="success" className="mt-4">
               Order saved
-            </div>
+            </InlineNotice>
           ) : null}
         </header>
 
@@ -702,6 +737,7 @@ export default function TasksScreen() {
                   }
 
                   try {
+                    setIsAddingTask(true);
                     setAddTaskError(null);
                     formData.set('list_id', activeListId);
                     formData.set('content', withPriorityTag(newTaskText, selectedPriority));
@@ -711,6 +747,8 @@ export default function TasksScreen() {
                   } catch (error) {
                     const message = error instanceof Error ? error.message : 'Could not create task';
                     setAddTaskError(process.env.NODE_ENV === 'development' ? message : 'Could not create task');
+                  } finally {
+                    setIsAddingTask(false);
                   }
                 }}
                 className="mt-2 flex flex-col gap-3 rounded-2xl border border-white/10 bg-black/30 p-4 sm:flex-row sm:items-center"
@@ -732,13 +770,13 @@ export default function TasksScreen() {
                 />
                 <button
                   type="submit"
-                  disabled={!canEdit || !newTaskText.trim()}
+                  disabled={!canEdit || !newTaskText.trim() || isAddingTask}
                   className={[
                     'min-h-[44px] w-full rounded-xl px-4 py-2 text-label font-sans uppercase tracking-widest font-semibold sm:w-auto',
                     canEdit ? 'bg-white text-black hover:opacity-90' : 'bg-white/20 text-text-tertiary',
                   ].join(' ')}
                 >
-                  Add
+                  {isAddingTask ? 'Adding...' : 'Add'}
                 </button>
               </form>
 
@@ -765,7 +803,11 @@ export default function TasksScreen() {
                 ))}
               </div>
 
-              {addTaskError ? <p className="mt-3 text-meta font-mono tracking-wide text-red-300">{addTaskError}</p> : null}
+              {addTaskError ? (
+                <InlineNotice variant="error" className="mt-3">
+                  {addTaskError}
+                </InlineNotice>
+              ) : null}
             </div>
 
             <DndContext
