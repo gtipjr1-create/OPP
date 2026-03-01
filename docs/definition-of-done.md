@@ -14,3 +14,5 @@
   `npm run lint` and `npm test` pass before merge.
 - Documentation:
   Update docs/checklists/templates when process or behavior changes.
+- Maintenance:
+  Weekly cleanup ritual completed (or explicitly deferred) via `docs/weekly-cleanup.md`.

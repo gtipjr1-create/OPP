@@ -193,6 +193,63 @@ type SortableTaskCardProps = {
   onSaveTask: (taskId: string, nextText: string) => Promise<void> | void;
 };
 
+type TaskRowActionsProps = {
+  canEdit: boolean;
+  isDeleting: boolean;
+  isSavingEdit: boolean;
+  onStartEdit: (event: React.MouseEvent) => void;
+  onOpenDeleteConfirm: (event: React.MouseEvent) => void;
+  setActivatorNodeRef: (element: HTMLElement | null) => void;
+  attributes: ReturnType<typeof useSortable>['attributes'];
+  listeners: ReturnType<typeof useSortable>['listeners'];
+};
+
+function TaskRowActions({
+  canEdit,
+  isDeleting,
+  isSavingEdit,
+  onStartEdit,
+  onOpenDeleteConfirm,
+  setActivatorNodeRef,
+  attributes,
+  listeners,
+}: TaskRowActionsProps) {
+  return (
+    <div className="flex shrink-0 items-center justify-end gap-1">
+      <button
+        type="button"
+        onClick={onStartEdit}
+        disabled={!canEdit || isDeleting || isSavingEdit}
+        className="min-h-[42px] min-w-[42px] rounded-lg border border-white/10 bg-white/5 px-2 text-label font-sans uppercase tracking-widest font-semibold text-text-secondary hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black disabled:cursor-not-allowed disabled:opacity-40 sm:min-h-[44px] sm:min-w-[44px]"
+        aria-label="Edit task"
+      >
+        Edit
+      </button>
+      <button
+        type="button"
+        onClick={onOpenDeleteConfirm}
+        disabled={!canEdit || isDeleting}
+        className="inline-flex min-h-[42px] min-w-[42px] items-center justify-center rounded-lg border border-white/10 bg-white/5 p-2 text-text-tertiary hover:bg-white/10 hover:text-red-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black disabled:cursor-not-allowed disabled:opacity-40 sm:min-h-[44px] sm:min-w-[44px]"
+        aria-label="Delete task"
+      >
+        <Trash2 size={14} />
+      </button>
+      <button
+        ref={setActivatorNodeRef}
+        type="button"
+        {...attributes}
+        {...listeners}
+        disabled={!canEdit}
+        aria-label="Drag to reorder task"
+        className="drag-handle inline-flex min-h-[42px] min-w-[42px] cursor-grab items-center justify-center rounded-lg border border-white/10 bg-white/5 p-2 text-text-secondary active:scale-95 active:cursor-grabbing touch-none select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black disabled:cursor-not-allowed disabled:opacity-40 sm:min-h-[44px] sm:min-w-[44px]"
+        style={{ touchAction: 'none' }}
+      >
+        <GripVertical size={14} />
+      </button>
+    </div>
+  );
+}
+
 function SortableTaskCard({
   task,
   canEdit,
@@ -401,38 +458,16 @@ function SortableTaskCard({
         </button>
       )}
 
-      <div className="flex shrink-0 items-center justify-end gap-1">
-        <button
-          type="button"
-          onClick={startEdit}
-          disabled={!canEdit || isDeleting || isSavingEdit}
-          className="min-h-[42px] min-w-[42px] rounded-lg border border-white/10 bg-white/5 px-2 text-label font-sans uppercase tracking-widest font-semibold text-text-secondary hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black disabled:cursor-not-allowed disabled:opacity-40 sm:min-h-[44px] sm:min-w-[44px]"
-          aria-label="Edit task"
-        >
-          Edit
-        </button>
-        <button
-          type="button"
-          onClick={openConfirmDelete}
-          disabled={!canEdit || isDeleting}
-          className="inline-flex min-h-[42px] min-w-[42px] items-center justify-center rounded-lg border border-white/10 bg-white/5 p-2 text-text-tertiary hover:bg-white/10 hover:text-red-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black disabled:cursor-not-allowed disabled:opacity-40 sm:min-h-[44px] sm:min-w-[44px]"
-          aria-label="Delete task"
-        >
-          <Trash2 size={14} />
-        </button>
-        <button
-          ref={setActivatorNodeRef}
-          type="button"
-          {...attributes}
-          {...listeners}
-          disabled={!canEdit}
-          aria-label="Drag to reorder task"
-          className="drag-handle inline-flex min-h-[42px] min-w-[42px] cursor-grab items-center justify-center rounded-lg border border-white/10 bg-white/5 p-2 text-text-secondary active:scale-95 active:cursor-grabbing touch-none select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black disabled:cursor-not-allowed disabled:opacity-40 sm:min-h-[44px] sm:min-w-[44px]"
-          style={{ touchAction: 'none' }}
-        >
-          <GripVertical size={14} />
-        </button>
-      </div>
+      <TaskRowActions
+        canEdit={canEdit}
+        isDeleting={isDeleting}
+        isSavingEdit={isSavingEdit}
+        onStartEdit={startEdit}
+        onOpenDeleteConfirm={openConfirmDelete}
+        setActivatorNodeRef={setActivatorNodeRef}
+        attributes={attributes}
+        listeners={listeners}
+      />
     </div>
   );
 }
@@ -567,7 +602,9 @@ export default function TasksScreen() {
         }, 1400);
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Could not save task order';
-        setAddTaskError(process.env.NODE_ENV === 'development' ? message : 'Could not save task order');
+        setAddTaskError(
+          process.env.NODE_ENV === 'development' ? `[E-TS-REORDER] ${message}` : 'Could not save task order. (E-TS-REORDER)',
+        );
         await reloadActiveTasks();
       } finally {
         setIsSavingOrder(false);
@@ -635,7 +672,9 @@ export default function TasksScreen() {
         await reloadActiveTasks();
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Could not delete task';
-        setAddTaskError(process.env.NODE_ENV === 'development' ? message : 'Could not delete task');
+        setAddTaskError(
+          process.env.NODE_ENV === 'development' ? `[E-TS-DELETE] ${message}` : 'Could not delete task. (E-TS-DELETE)',
+        );
       }
     },
     [reloadActiveTasks],
@@ -767,7 +806,11 @@ export default function TasksScreen() {
                     await createNewList();
                   } catch (error) {
                     const message = error instanceof Error ? error.message : 'Could not create session';
-                    setNewSessionError(process.env.NODE_ENV === 'development' ? message : 'Could not create session');
+                    setNewSessionError(
+                      process.env.NODE_ENV === 'development'
+                        ? `[E-TS-NEWSESSION] ${message}`
+                        : 'Could not create session. (E-TS-NEWSESSION)',
+                    );
                   } finally {
                     setIsCreatingSession(false);
                   }
@@ -828,7 +871,11 @@ export default function TasksScreen() {
                     await reloadActiveTasks();
                   } catch (error) {
                     const message = error instanceof Error ? error.message : 'Could not create task';
-                    setAddTaskError(process.env.NODE_ENV === 'development' ? message : 'Could not create task');
+                    setAddTaskError(
+                      process.env.NODE_ENV === 'development'
+                        ? `[E-TS-CREATETASK] ${message}`
+                        : 'Could not create task. (E-TS-CREATETASK)',
+                    );
                   } finally {
                     setIsAddingTask(false);
                   }

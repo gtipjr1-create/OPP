@@ -4,6 +4,7 @@
 - `npm run lint`
 - `npm test`
 - `npm run test:e2e` (or note why deferred)
+- Verify `docs/task-row-state-matrix.md` for task-row changes
 - Verify migrations are safe and reversible
 
 ## Pre-deploy
