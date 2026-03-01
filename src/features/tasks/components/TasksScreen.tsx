@@ -534,7 +534,7 @@ export default function TasksScreen() {
             <div>
               <div className="text-label font-sans uppercase tracking-widest font-semibold text-text-tertiary">ACTIVE SESSION</div>
 
-              <div className="mt-3">
+              <div className="mt-2">
                 <div className="flex items-end gap-3">
                   <OppMark size={48} />
                 </div>
@@ -552,7 +552,7 @@ export default function TasksScreen() {
                       }
                     }}
                     className={[
-                      'mt-3 w-full bg-transparent text-title font-sans uppercase tracking-tight font-bold text-text-primary outline-none',
+                      'mt-2 w-full bg-transparent text-title font-sans uppercase tracking-tight font-bold text-text-primary outline-none',
                       canEdit ? 'opacity-100' : 'opacity-70',
                     ].join(' ')}
                   />
@@ -565,7 +565,7 @@ export default function TasksScreen() {
                       setTitleEdit(activeTitle);
                     }}
                     className={[
-                      'mt-3 text-left text-title font-sans uppercase tracking-tight font-bold text-text-primary',
+                      'mt-2 text-left text-title font-sans uppercase tracking-tight font-bold text-text-primary',
                       canEdit ? 'opacity-100 hover:text-text-accent' : 'opacity-70',
                     ].join(' ')}
                   >
@@ -606,8 +606,8 @@ export default function TasksScreen() {
                 </div>
               </div>
 
-              <div className="mt-5 grid gap-3 sm:grid-cols-3">
-                <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+              <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
                   <div className="text-label font-sans uppercase tracking-widest font-semibold text-text-tertiary">COMPLETION</div>
                   <div className="mt-1 flex items-baseline justify-between">
                     <div className="text-[2.25rem] font-bold tracking-tight text-text-primary">{pct}%</div>
@@ -620,7 +620,7 @@ export default function TasksScreen() {
                   </div>
                 </div>
 
-                <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+                <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
                   <div className="text-label font-sans uppercase tracking-widest font-semibold text-text-tertiary">WEIGHTED</div>
                   <div className="mt-1 flex items-baseline justify-between">
                     <div className="text-[2.25rem] font-bold tracking-tight text-text-primary">{weightedPct}%</div>
@@ -633,7 +633,7 @@ export default function TasksScreen() {
                   </div>
                 </div>
 
-                <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+                <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
                   <div className="text-label font-sans uppercase tracking-widest font-semibold text-text-tertiary">SCHEDULED</div>
                   <div className="mt-1 flex items-baseline justify-between">
                     <div className="text-[2.25rem] font-bold tracking-tight text-text-primary">{scheduled}</div>
@@ -676,13 +676,13 @@ export default function TasksScreen() {
           </div>
 
           {newSessionError ? (
-            <div className="mt-4 rounded-2xl border border-red-400/45 bg-red-500/15 px-4 py-3 text-meta font-mono tracking-wide text-red-100">
+            <div className="mt-4 rounded-2xl border border-red-400/45 bg-red-500/15 p-4 text-meta font-mono tracking-wide text-red-100">
               New Session failed: {newSessionError}
             </div>
           ) : null}
 
           {orderSavedToast ? (
-            <div className="mt-4 rounded-2xl border border-emerald-400/40 bg-emerald-500/15 px-4 py-2 text-meta font-mono tracking-wide text-emerald-100">
+            <div className="mt-4 rounded-2xl border border-emerald-400/40 bg-emerald-500/15 p-4 text-meta font-mono tracking-wide text-emerald-100">
               Order saved
             </div>
           ) : null}
@@ -765,7 +765,7 @@ export default function TasksScreen() {
                     setAddTaskError(process.env.NODE_ENV === 'development' ? message : 'Could not create task');
                   }
                 }}
-                className="mt-3 flex flex-col gap-3 rounded-2xl border border-white/10 bg-black/30 px-4 py-3 sm:flex-row sm:items-center"
+                className="mt-2 flex flex-col gap-3 rounded-2xl border border-white/10 bg-black/30 p-4 sm:flex-row sm:items-center"
               >
                 <input type="hidden" name="list_id" value={activeListId ?? ''} />
                 <input type="hidden" name="content" value={withPriorityTag(newTaskText, selectedPriority)} />
@@ -828,9 +828,9 @@ export default function TasksScreen() {
               }}
             >
               <SortableContext items={orderedTaskIds} strategy={verticalListSortingStrategy}>
-                <div className="space-y-5">
+                <div className="space-y-2">
                   {groups.length === 0 ? (
-                    <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-6 text-task font-medium text-text-secondary">
+                    <div className="rounded-2xl border border-white/10 bg-black/20 p-4 text-task font-medium text-text-secondary">
                       No tasks yet. Add your first item above.
                     </div>
                   ) : null}
@@ -861,7 +861,7 @@ export default function TasksScreen() {
           </main>
         </div>
 
-        <div className="mt-7 rounded-3xl border border-white/10 bg-white/5 p-4">
+        <div className="mt-4 rounded-3xl border border-white/10 bg-white/5 p-4">
           <div className="flex items-center justify-between">
             <div className="text-label font-sans uppercase tracking-widest font-semibold text-text-tertiary">ARCHIVED LOGS</div>
             <button
@@ -880,7 +880,7 @@ export default function TasksScreen() {
 
           {isArchivedLogsOpen ? (
             <>
-              <div className="mt-3 flex items-center gap-3 rounded-2xl border border-white/10 bg-black/30 px-4 py-3">
+              <div className="mt-2 flex items-center gap-3 rounded-2xl border border-white/10 bg-black/30 p-4">
                 <input placeholder="Search history..." className="flex-1 bg-transparent text-task outline-none placeholder:text-white/30" />
               </div>
 
@@ -891,14 +891,14 @@ export default function TasksScreen() {
                     type="button"
                     onClick={() => handleArchiveSelect(list.id)}
                     className={[
-                      'block w-full rounded-xl border bg-black/30 px-3 py-2.5 text-left transition-colors',
+                      'block w-full rounded-xl border bg-black/30 p-4 text-left transition-colors',
                       activeListId === list.id
                         ? 'border-[color:var(--state-active)]/80 bg-blue-500/10 text-text-primary shadow-[inset_0_0_0_1px_rgba(96,165,250,0.25)]'
                         : 'border-white/10 text-[color:var(--state-archived)] hover:bg-black/50',
                     ].join(' ')}
                   >
                     <div className="truncate text-task font-medium text-text-primary">{list.title}</div>
-                    <div className="mt-1 text-meta font-mono tracking-wide text-text-secondary">
+                    <div className="mt-2 text-meta font-mono tracking-wide text-text-secondary">
                       {(() => {
                         const stats = listStatsById[list.id];
                         if (!stats) {

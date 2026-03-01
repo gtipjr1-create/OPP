@@ -17,6 +17,12 @@
   --color-text-tertiary:  rgba(255,255,255,0.35);
   --color-text-accent:    #4A9EFF;
   --color-text-disabled:  rgba(255,255,255,0.20);
+
+  /* Spacing Rhythm */
+  --spacing-section: 1.75rem;   /* 28px — between major sections */
+  --spacing-card: 1rem;         /* 16px — internal card padding */
+  --spacing-stack: 0.75rem;     /* 12px — between stacked items */
+  --spacing-tight: 0.5rem;      /* 8px  — between related elements */
 }
 
 :root {

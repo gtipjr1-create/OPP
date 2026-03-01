@@ -39,9 +39,9 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="flex items-center justify-center min-h-screen p-6 text-white bg-black">
+    <main className="flex items-center justify-center min-h-screen p-6 text-text-primary bg-black">
       <form onSubmit={submit} className="w-full max-w-sm space-y-3">
-        <h1 className="text-2xl font-bold">OPP</h1>
+        <h1 className="text-title font-sans uppercase tracking-tight font-bold text-text-primary">OPP</h1>
 
         <input
           className="w-full px-4 py-3 border rounded-xl bg-zinc-900 border-zinc-800"
@@ -82,9 +82,9 @@ export default function LoginPage() {
           Who am I?
         </button>
 
-        {msg ? <p className="text-sm text-zinc-400">{msg}</p> : null}
+        {msg ? <p className="text-meta font-mono tracking-wide text-text-secondary">{msg}</p> : null}
         {whoAmIResult ? (
-          <p className="text-sm text-zinc-400">
+          <p className="text-meta font-mono tracking-wide text-text-secondary">
             hasUser: {String(whoAmIResult.hasUser)} | userId: {whoAmIResult.userId ?? 'null'} | error:{' '}
             {whoAmIResult.error ?? 'null'}
           </p>
