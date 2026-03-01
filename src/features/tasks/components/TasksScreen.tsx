@@ -7,6 +7,7 @@ import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } 
 import { CSS } from '@dnd-kit/utilities';
 import { ChevronDown, GripVertical, Trash2 } from 'lucide-react';
 import { OppMark } from '@/components/OppMark';
+import Button from '@/components/ui/Button';
 
 import { APP_CONFIG } from '@/config/app';
 
@@ -313,14 +314,14 @@ function SortableTaskCard({
           >
             Cancel
           </button>
-          <button
-            type="button"
+          <Button
+            variant="danger"
             onClick={confirmAndDelete}
             disabled={isDeleting}
-            className="min-h-[40px] shrink-0 whitespace-nowrap rounded-lg bg-red-500/20 px-3 text-label font-sans uppercase tracking-widest font-semibold text-red-200 hover:bg-red-500/30 disabled:cursor-not-allowed disabled:opacity-40"
+            className="min-h-[40px] shrink-0 whitespace-nowrap rounded-lg px-3"
           >
             {isDeleting ? '...' : 'Delete'}
-          </button>
+          </Button>
         </div>
       ) : (
         <div className="flex w-full shrink-0 items-center justify-end gap-1">
@@ -661,8 +662,8 @@ export default function TasksScreen() {
             </div>
 
             <div className="mt-2 flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-center lg:w-[260px] lg:justify-end">
-              <button
-                type="button"
+              <Button
+                variant="primary"
                 onClick={async () => {
                   setNewSessionError(null);
                   try {
@@ -672,22 +673,16 @@ export default function TasksScreen() {
                     setNewSessionError(process.env.NODE_ENV === 'development' ? message : 'Could not create session');
                   }
                 }}
-                className="min-h-[44px] w-full rounded-2xl border border-white/10 bg-white px-4 py-3 text-label font-sans uppercase tracking-widest font-semibold text-black hover:opacity-90 sm:w-auto"
+                className="w-full sm:w-auto"
               >
                 New Session
-              </button>
-              <button
-                type="button"
-                className="min-h-[44px] w-full rounded-2xl border border-white/20 bg-transparent px-4 py-3 text-label font-sans uppercase tracking-widest font-semibold text-text-secondary hover:bg-white/5 hover:text-text-primary sm:w-auto"
-              >
+              </Button>
+              <Button variant="secondary" className="w-full sm:w-auto">
                 Duplicate
-              </button>
-              <button
-                type="button"
-                className="min-h-[44px] w-full rounded-2xl border border-white/10 bg-transparent px-4 py-3 text-label font-sans uppercase tracking-widest font-semibold text-text-tertiary hover:bg-white/5 hover:text-text-secondary sm:w-auto"
-              >
+              </Button>
+              <Button variant="ghost" className="w-full sm:w-auto">
                 Export
-              </button>
+              </Button>
             </div>
           </div>
 

@@ -21,7 +21,7 @@ const variantClasses: Record<ButtonVariant, string> = {
     'bg-red-500/20 border border-red-400/30 text-red-200 hover:bg-red-500/30 disabled:opacity-40 disabled:cursor-not-allowed',
 };
 
-export function Button({
+export default function Button({
   variant = 'primary',
   onClick,
   disabled = false,
