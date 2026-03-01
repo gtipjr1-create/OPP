@@ -107,7 +107,7 @@ export default function TaskItem({
             }}
             className={`relative z-10 rounded-2xl border cursor-pointer ${
               confirmDelete
-                ? 'bg-black/40 border-white/10'
+                ? 'bg-black border-white/10'
                 : task.is_done
                   ? 'bg-zinc-950 border-zinc-900 opacity-40'
                   : 'bg-zinc-900 border-zinc-800 hover:border-blue-500'
@@ -115,11 +115,11 @@ export default function TaskItem({
             onClick={() => !isEditing && !confirmDelete && toggleTask(task.id, task.is_done)}
           >
             {confirmDelete ? (
-              <div className="flex items-center justify-between gap-3 p-6">
+              <div className="flex w-full items-center justify-between gap-3">
                 <span className="text-meta font-mono tracking-wide text-text-secondary">
                   Delete this task?
                 </span>
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex shrink-0 items-center gap-2">
                   <button
                     onClick={cancelDeleteConfirm}
                     className="min-h-[44px] rounded-lg border border-white/10 bg-white/5 px-3 text-label font-sans uppercase tracking-widest font-semibold text-text-secondary hover:bg-white/10"
