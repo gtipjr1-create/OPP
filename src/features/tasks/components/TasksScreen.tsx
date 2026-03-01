@@ -282,7 +282,7 @@ function SortableTaskCard({
       style={style}
       data-task-id={task.id}
       className={[
-        'draggable-row relative box-border grid w-full max-w-full grid-cols-[auto_minmax(0,1fr)_5.75rem] items-center gap-3 overflow-hidden rounded-2xl border border-white/10 bg-black/30 px-3 py-2.5 sm:grid-cols-[auto_minmax(0,1fr)_6.5rem] sm:px-4 sm:py-3',
+        'draggable-row relative box-border grid w-full max-w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 overflow-hidden rounded-2xl border border-white/10 bg-black/30 px-3 py-2.5 sm:px-4 sm:py-3',
         isDragging || isActiveDrag ? 'opacity-60' : '',
         task.done ? 'opacity-80' : '',
       ].join(' ')}
@@ -384,7 +384,7 @@ function SortableTaskCard({
           </Button>
         </div>
       ) : (
-        <div className="flex w-full shrink-0 items-center justify-end gap-1">
+        <div className="flex shrink-0 items-center justify-end gap-1">
           <button
             type="button"
             onClick={startEdit}
