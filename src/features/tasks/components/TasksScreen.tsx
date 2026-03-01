@@ -20,6 +20,7 @@ type Task = {
   title: string;
   done: boolean;
   priority: Priority;
+  taggedPriority?: Priority;
   time?: string;
   scheduledFor?: Date;
   section?: string;
@@ -83,13 +84,27 @@ function extractPriority(content: string): Priority {
   return 'normal';
 }
 
+function extractTaggedPriority(content: string): Priority | undefined {
+  const lower = content.toLowerCase();
+  if (/(?:^|\s)#high\b/.test(lower) || /(?:^|\s)#p1\b/.test(lower) || /\bp1\b/.test(lower)) {
+    return 'high';
+  }
+  if (/(?:^|\s)#normal\b/.test(lower)) {
+    return 'normal';
+  }
+  if (/(?:^|\s)#low\b/.test(lower)) {
+    return 'low';
+  }
+  return undefined;
+}
+
 function withPriorityTag(content: string, priority: Priority): string {
   const trimmed = content.trim();
   if (!trimmed) {
     return trimmed;
   }
 
-  const hasExplicitPriority = /#high|#low/i.test(trimmed);
+  const hasExplicitPriority = /#high|#low|#normal|#p1|\bp1\b/i.test(trimmed);
   if (priority === 'normal' || hasExplicitPriority) {
     return trimmed;
   }
@@ -386,6 +401,7 @@ export default function TasksScreen() {
         title: task.content,
         done: task.is_done,
         priority: extractPriority(task.content),
+        taggedPriority: extractTaggedPriority(task.content),
         time: extractTime(task.content),
         scheduledFor: extractTargetDate(task.content),
       })),
@@ -706,6 +722,18 @@ export default function TasksScreen() {
                 const label = formatHour(hour);
                 const isCurrentHour = hour === currentHour;
                 const slotTasks = timed.filter((task) => Number(task.time!.split(':')[0]) === hour);
+                const slotTaggedPriority =
+                  slotTasks.find((task) => task.taggedPriority === 'high')?.taggedPriority ??
+                  slotTasks.find((task) => task.taggedPriority === 'normal')?.taggedPriority ??
+                  slotTasks.find((task) => task.taggedPriority === 'low')?.taggedPriority;
+                const dotClass =
+                  slotTaggedPriority === 'high'
+                    ? 'bg-[color:var(--priority-high)]'
+                    : slotTaggedPriority === 'normal'
+                      ? 'bg-[color:var(--priority-normal)]'
+                      : slotTaggedPriority === 'low'
+                        ? 'bg-[color:var(--priority-low)]'
+                        : '';
 
                 return (
                   <div key={hour} className="flex items-start gap-3">
@@ -717,27 +745,11 @@ export default function TasksScreen() {
                         isCurrentHour ? 'border-[color:var(--state-active)]/85' : 'border-white/20',
                       ].join(' ')}
                     >
-                      {slotTasks.length === 0 ? (
-                        <div className="flex h-5 items-center">
-                          {isCurrentHour ? <span className="h-1.5 w-1.5 rounded-full bg-[color:var(--state-active)]" /> : null}
-                        </div>
-                      ) : (
-                        <div className="space-y-2">
-                          {slotTasks.map((task) => (
-                            <div
-                              key={task.id}
-                              className="w-full max-w-full overflow-hidden rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-meta font-mono tracking-wide"
-                            >
-                              <div className="flex min-w-0 items-center justify-between gap-3">
-                                <div className={['min-w-0 truncate', task.done ? 'line-through text-text-tertiary' : ''].join(' ')}>
-                                  {task.title}
-                                </div>
-                                <div className="shrink-0 text-meta font-mono tracking-wide text-text-secondary">{formatDisplayTime(task.time!)}</div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
+                      <div className="flex h-5 items-center">
+                        {slotTaggedPriority ? (
+                          <span className={['h-1.5 w-1.5 rounded-full', dotClass].join(' ')} />
+                        ) : null}
+                      </div>
                     </div>
                   </div>
                 );
