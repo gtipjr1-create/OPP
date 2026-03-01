@@ -105,7 +105,7 @@ export default function TaskItem({
               transition: dragX === 0 ? 'transform 0.2s ease' : 'none',
               touchAction: 'pan-y',
             }}
-            className={`relative z-10 flex items-center gap-4 p-6 rounded-2xl border cursor-pointer ${
+            className={`relative z-10 flex w-full items-center gap-2 p-6 rounded-2xl border cursor-pointer ${
               task.is_done
                 ? 'bg-zinc-950 border-zinc-900 opacity-40'
                 : 'bg-zinc-900 border-zinc-800 hover:border-blue-500'
@@ -118,7 +118,7 @@ export default function TaskItem({
               <Circle size={32} className="text-text-tertiary shrink-0" />
             )}
 
-            <div className="min-w-0 flex-1">
+            <div className="min-w-0 flex-1 overflow-hidden">
               {isEditing ? (
                 <input
                   defaultValue={task.content}
@@ -143,7 +143,7 @@ export default function TaskItem({
               )}
             </div>
 
-            <div className="flex items-center gap-2 transition-opacity opacity-0 group-hover:opacity-100">
+            <div className="shrink-0 flex items-center gap-2 transition-opacity opacity-0 group-hover:opacity-100">
               <button
                 onClick={(event) => startEditing(task.id, event)}
                 className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-text-tertiary hover:bg-white/5 hover:text-text-accent"
