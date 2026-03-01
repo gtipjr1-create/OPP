@@ -33,7 +33,9 @@ export default function ScheduleRail({
         <button
           type="button"
           onClick={onToggleOpen}
-          className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-label font-sans uppercase tracking-widest font-semibold text-text-secondary md:hidden"
+          aria-expanded={isOpen}
+          aria-label={isOpen ? 'Hide schedule rail' : `Show schedule rail (${scheduledCount} scheduled)`}
+          className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-label font-sans uppercase tracking-widest font-semibold text-text-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black md:hidden"
         >
           {isOpen ? 'Hide' : `Show (${scheduledCount})`}
         </button>
@@ -54,7 +56,11 @@ export default function ScheduleRail({
                   : '';
 
           return (
-            <div key={hour} className="flex items-start gap-3">
+            <div
+              key={hour}
+              className="flex items-start gap-3"
+              aria-label={`${label}${dotPriority ? ` ${dotPriority} priority task scheduled` : ''}`}
+            >
               <div className="w-11 shrink-0 pt-1 text-label font-mono tracking-wide text-text-tertiary">{label}</div>
 
               <div
@@ -64,7 +70,13 @@ export default function ScheduleRail({
                 ].join(' ')}
               >
                 <div className="flex h-5 items-center">
-                  {dotPriority ? <span className={['h-1.5 w-1.5 rounded-full', dotClass].join(' ')} /> : null}
+                  {dotPriority ? (
+                    <span
+                      aria-hidden="true"
+                      title={`${dotPriority} priority`}
+                      className={['h-1.5 w-1.5 rounded-full', dotClass].join(' ')}
+                    />
+                  ) : null}
                 </div>
               </div>
             </div>

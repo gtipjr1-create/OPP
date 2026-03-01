@@ -2,8 +2,8 @@
 
 import React from 'react';
 import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core';
-import { DndContext, MouseSensor, TouchSensor, closestCenter, useSensor, useSensors } from '@dnd-kit/core';
-import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { DndContext, KeyboardSensor, MouseSensor, TouchSensor, closestCenter, useSensor, useSensors } from '@dnd-kit/core';
+import { SortableContext, arrayMove, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, Trash2 } from 'lucide-react';
 import { OppMark } from '@/components/OppMark';
@@ -292,7 +292,8 @@ function SortableTaskCard({
           type="checkbox"
           checked={task.done}
           onChange={() => onToggleTask(task.id, task.done)}
-          className="h-6 w-6 accent-blue-500"
+          aria-label={task.done ? `Mark ${task.title} as incomplete` : `Mark ${task.title} as complete`}
+          className="h-6 w-6 accent-blue-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black"
           disabled={!canEdit}
         />
       </label>
@@ -315,7 +316,7 @@ function SortableTaskCard({
                 setEditValue(task.title);
               }
             }}
-            className="min-h-[44px] w-full bg-transparent text-task font-medium text-text-primary outline-none"
+            className="min-h-[44px] w-full bg-transparent text-task font-medium text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black"
             autoFocus
           />
           <div className="text-meta font-mono tracking-wide text-text-secondary">
@@ -326,7 +327,7 @@ function SortableTaskCard({
         <button
           type="button"
           onClick={() => setIsExpanded((value) => !value)}
-          className="min-w-0 basis-0 flex-1 overflow-hidden rounded-md text-left"
+          className="min-w-0 basis-0 flex-1 overflow-hidden rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black"
           aria-expanded={isExpanded}
           aria-label={isExpanded ? 'Collapse task details' : 'Expand task details'}
         >
@@ -369,7 +370,7 @@ function SortableTaskCard({
             type="button"
             onClick={cancelConfirmDelete}
             disabled={isDeleting}
-            className="min-h-[40px] shrink-0 whitespace-nowrap rounded-lg border border-white/10 bg-white/5 px-3 text-label font-sans uppercase tracking-widest font-semibold text-text-secondary hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
+            className="min-h-[40px] shrink-0 whitespace-nowrap rounded-lg border border-white/10 bg-white/5 px-3 text-label font-sans uppercase tracking-widest font-semibold text-text-secondary hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black disabled:cursor-not-allowed disabled:opacity-40"
           >
             Cancel
           </button>
@@ -388,7 +389,7 @@ function SortableTaskCard({
             type="button"
             onClick={startEdit}
             disabled={!canEdit || isDeleting || isSavingEdit}
-            className="min-h-[42px] min-w-[42px] rounded-lg border border-white/10 bg-white/5 px-2 text-label font-sans uppercase tracking-widest font-semibold text-text-secondary hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40 sm:min-h-[44px] sm:min-w-[44px]"
+            className="min-h-[42px] min-w-[42px] rounded-lg border border-white/10 bg-white/5 px-2 text-label font-sans uppercase tracking-widest font-semibold text-text-secondary hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black disabled:cursor-not-allowed disabled:opacity-40 sm:min-h-[44px] sm:min-w-[44px]"
             aria-label="Edit task"
           >
             Edit
@@ -397,7 +398,7 @@ function SortableTaskCard({
             type="button"
             onClick={openConfirmDelete}
             disabled={!canEdit || isDeleting}
-            className="inline-flex min-h-[42px] min-w-[42px] items-center justify-center rounded-lg border border-white/10 bg-white/5 p-2 text-text-tertiary hover:bg-white/10 hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-40 sm:min-h-[44px] sm:min-w-[44px]"
+            className="inline-flex min-h-[42px] min-w-[42px] items-center justify-center rounded-lg border border-white/10 bg-white/5 p-2 text-text-tertiary hover:bg-white/10 hover:text-red-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black disabled:cursor-not-allowed disabled:opacity-40 sm:min-h-[44px] sm:min-w-[44px]"
             aria-label="Delete task"
           >
             <Trash2 size={14} />
@@ -409,7 +410,7 @@ function SortableTaskCard({
             {...listeners}
             disabled={!canEdit}
             aria-label="Drag to reorder task"
-            className="drag-handle inline-flex min-h-[42px] min-w-[42px] cursor-grab items-center justify-center rounded-lg border border-white/10 bg-white/5 p-2 text-text-secondary active:scale-95 active:cursor-grabbing touch-none select-none disabled:cursor-not-allowed disabled:opacity-40 sm:min-h-[44px] sm:min-w-[44px]"
+            className="drag-handle inline-flex min-h-[42px] min-w-[42px] cursor-grab items-center justify-center rounded-lg border border-white/10 bg-white/5 p-2 text-text-secondary active:scale-95 active:cursor-grabbing touch-none select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black disabled:cursor-not-allowed disabled:opacity-40 sm:min-h-[44px] sm:min-w-[44px]"
             style={{ touchAction: 'none' }}
           >
             <GripVertical size={14} />
@@ -466,6 +467,9 @@ export default function TasksScreen() {
       activationConstraint: {
         distance: 8,
       },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
     }),
   );
 
@@ -668,7 +672,7 @@ export default function TasksScreen() {
                       }
                     }}
                     className={[
-                      'mt-2 w-full bg-transparent text-title font-sans uppercase tracking-tight font-bold text-text-primary outline-none',
+                      'mt-2 w-full bg-transparent text-title font-sans uppercase tracking-tight font-bold text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black',
                       canEdit ? 'opacity-100' : 'opacity-70',
                     ].join(' ')}
                   />
@@ -681,7 +685,7 @@ export default function TasksScreen() {
                       setTitleEdit(activeTitle);
                     }}
                     className={[
-                      'mt-2 text-left text-title font-sans uppercase tracking-tight font-bold text-text-primary',
+                      'mt-2 text-left text-title font-sans uppercase tracking-tight font-bold text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black',
                       canEdit ? 'opacity-100 hover:text-text-accent' : 'opacity-70',
                     ].join(' ')}
                   >
@@ -696,8 +700,10 @@ export default function TasksScreen() {
                 <button
                   type="button"
                   onClick={() => setIsLocked((value) => !value)}
+                  aria-pressed={!isLocked}
+                  aria-label={isLocked ? 'Unlock session editing' : 'Lock session editing'}
                   className={[
-                    'rounded-full border px-3 py-1',
+                    'rounded-full border px-3 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black',
                     isLocked ? 'border-white/10 bg-white/5 text-text-secondary' : 'border-blue-500/40 bg-blue-500/10 text-text-accent',
                   ].join(' ')}
                 >
@@ -830,7 +836,7 @@ export default function TasksScreen() {
                   type="submit"
                   disabled={!canEdit || !newTaskText.trim() || isAddingTask}
                   className={[
-                    'min-h-[44px] w-full rounded-xl px-4 py-2 text-label font-sans uppercase tracking-widest font-semibold sm:w-auto',
+                    'min-h-[44px] w-full rounded-xl px-4 py-2 text-label font-sans uppercase tracking-widest font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black sm:w-auto',
                     canEdit ? 'bg-white text-black hover:opacity-90' : 'bg-white/20 text-text-tertiary',
                   ].join(' ')}
                 >
@@ -845,8 +851,10 @@ export default function TasksScreen() {
                     type="button"
                     disabled={!canEdit}
                     onClick={() => setSelectedPriority(priority)}
+                    aria-pressed={selectedPriority === priority}
+                    aria-label={`Set priority to ${priority}`}
                     className={[
-                      'rounded-full border px-3 py-1 text-label font-sans uppercase tracking-widest font-semibold',
+                      'rounded-full border px-3 py-1 text-label font-sans uppercase tracking-widest font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black',
                       selectedPriority === priority
                         ? priority === 'high'
                           ? 'border-[color:var(--priority-high)]/60 text-[color:var(--priority-high)] bg-red-500/10'

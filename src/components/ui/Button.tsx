@@ -8,6 +8,8 @@ type ButtonProps = {
   disabled?: boolean;
   children: React.ReactNode;
   className?: string;
+  type?: 'button' | 'submit' | 'reset';
+  ariaLabel?: string;
 };
 
 const variantClasses: Record<ButtonVariant, string> = {
@@ -27,14 +29,17 @@ export default function Button({
   disabled = false,
   children,
   className = '',
+  type = 'button',
+  ariaLabel,
 }: ButtonProps) {
   return (
     <button
-      type="button"
+      type={type}
       onClick={onClick}
       disabled={disabled}
+      aria-label={ariaLabel}
       className={[
-        'min-h-[44px] rounded-2xl px-4 py-3 text-label font-sans uppercase tracking-widest font-semibold transition-colors',
+        'min-h-[44px] rounded-2xl px-4 py-3 text-label font-sans uppercase tracking-widest font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black',
         variantClasses[variant],
         className,
       ]
