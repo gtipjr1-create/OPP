@@ -1,5 +1,6 @@
 import { createSupabaseBrowserClient } from '@/lib/supabaseBrowser';
 import type { ListRow, TaskRow } from './types';
+import { parseTaskSemantics } from './lib/taskSemantics';
 
 const supabase = createSupabaseBrowserClient();
 
@@ -7,6 +8,18 @@ function assertNoError(error: { message: string } | null): void {
   if (error) {
     throw new Error(error.message);
   }
+}
+
+function isMissingSemanticsColumnsError(error: { message: string } | null): boolean {
+  if (!error) {
+    return false;
+  }
+  const message = error.message.toLowerCase();
+  return (
+    message.includes('column') &&
+    (message.includes('priority') || message.includes('tagged_priority') || message.includes('scheduled_time') || message.includes('scheduled_for')) &&
+    message.includes('does not exist')
+  );
 }
 
 async function getRequiredUserId(): Promise<string> {
@@ -100,12 +113,32 @@ export async function createTask(listId: string, content: string): Promise<TaskR
 
   assertNoError(positionError);
   const nextPosition = Number(highestPositionTask?.position ?? 0) + 1;
+  const semantics = parseTaskSemantics(content, 'normal');
 
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from('tasks')
-    .insert([{ content, list_id: listId, user_id: userId, position: nextPosition }])
+    .insert([{
+      content,
+      list_id: listId,
+      user_id: userId,
+      position: nextPosition,
+      priority: semantics.priority,
+      tagged_priority: semantics.taggedPriority ?? null,
+      scheduled_time: semantics.scheduledTime ?? null,
+      scheduled_for: semantics.scheduledFor ?? null,
+    }])
     .select()
     .single();
+
+  if (isMissingSemanticsColumnsError(error)) {
+    const fallback = await supabase
+      .from('tasks')
+      .insert([{ content, list_id: listId, user_id: userId, position: nextPosition }])
+      .select()
+      .single();
+    data = fallback.data;
+    error = fallback.error;
+  }
 
   assertNoError(error);
   return data as TaskRow;
@@ -121,10 +154,25 @@ export async function setTaskDone(taskId: string, isDone: boolean): Promise<void
 }
 
 export async function renameTask(taskId: string, content: string): Promise<void> {
-  const { error } = await supabase
+  const semantics = parseTaskSemantics(content, 'normal');
+  let { error } = await supabase
     .from('tasks')
-    .update({ content })
+    .update({
+      content,
+      tagged_priority: semantics.taggedPriority ?? null,
+      scheduled_time: semantics.scheduledTime ?? null,
+      scheduled_for: semantics.scheduledFor ?? null,
+      ...(semantics.taggedPriority ? { priority: semantics.taggedPriority } : {}),
+    })
     .eq('id', taskId);
+
+  if (isMissingSemanticsColumnsError(error)) {
+    const fallback = await supabase
+      .from('tasks')
+      .update({ content })
+      .eq('id', taskId);
+    error = fallback.error;
+  }
 
   assertNoError(error);
 }

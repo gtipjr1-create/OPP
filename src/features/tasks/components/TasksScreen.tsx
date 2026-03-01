@@ -402,10 +402,10 @@ export default function TasksScreen() {
         id: task.id,
         title: task.content,
         done: task.is_done,
-        priority: extractPriority(task.content),
-        taggedPriority: extractTaggedPriority(task.content),
-        time: extractTime(task.content),
-        scheduledFor: extractTargetDate(task.content),
+        priority: task.priority ?? extractPriority(task.content),
+        taggedPriority: task.tagged_priority ?? extractTaggedPriority(task.content),
+        time: task.scheduled_time ? task.scheduled_time.slice(0, 5) : extractTime(task.content),
+        scheduledFor: task.scheduled_for ? new Date(`${task.scheduled_for}T00:00:00`) : extractTargetDate(task.content),
       })),
     [taskRows],
   );
@@ -779,6 +779,7 @@ export default function TasksScreen() {
               >
                 <input type="hidden" name="list_id" value={activeListId ?? ''} />
                 <input type="hidden" name="content" value={withPriorityTag(newTaskText, selectedPriority)} />
+                <input type="hidden" name="priority" value={selectedPriority} />
                 <Input
                   value={newTaskText}
                   disabled={!canEdit}

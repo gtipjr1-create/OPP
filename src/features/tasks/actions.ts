@@ -4,6 +4,19 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 
 import { createSupabaseServerClient } from '@/lib/supabaseServer';
+import { parseTaskSemantics } from './lib/taskSemantics';
+
+function isMissingSemanticsColumnsError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') {
+    return false;
+  }
+  const message = String((error as { message?: string }).message ?? '').toLowerCase();
+  return (
+    message.includes('column') &&
+    (message.includes('priority') || message.includes('tagged_priority') || message.includes('scheduled_time') || message.includes('scheduled_for')) &&
+    message.includes('does not exist')
+  );
+}
 
 export async function whoAmI() {
   const supabase = await createSupabaseServerClient();
@@ -22,6 +35,11 @@ export async function whoAmI() {
 export async function createTaskAction(formData: FormData) {
   const content = String(formData.get('content') ?? formData.get('title') ?? '').trim();
   const listId = String(formData.get('list_id') ?? '').trim();
+  const requestedPriorityRaw = String(formData.get('priority') ?? '').trim().toLowerCase();
+  const requestedPriority =
+    requestedPriorityRaw === 'high' || requestedPriorityRaw === 'normal' || requestedPriorityRaw === 'low'
+      ? requestedPriorityRaw
+      : 'normal';
 
   if (!content || !listId) {
     return;
@@ -58,15 +76,33 @@ export async function createTaskAction(formData: FormData) {
   }
 
   const nextPosition = Number(highestPositionTask?.position ?? 0) + 1;
+  const semantics = parseTaskSemantics(content, requestedPriority);
 
   const { error: insertError } = await supabase.from('tasks').insert({
     user_id: user.id,
     list_id: listId,
     content,
     position: nextPosition,
+    priority: semantics.priority,
+    tagged_priority: semantics.taggedPriority ?? null,
+    scheduled_time: semantics.scheduledTime ?? null,
+    scheduled_for: semantics.scheduledFor ?? null,
   });
 
   if (insertError) {
+    if (isMissingSemanticsColumnsError(insertError)) {
+      const { error: legacyInsertError } = await supabase.from('tasks').insert({
+        user_id: user.id,
+        list_id: listId,
+        content,
+        position: nextPosition,
+      });
+      if (!legacyInsertError) {
+        revalidatePath('/');
+        return;
+      }
+      throw new Error(legacyInsertError.message);
+    }
     console.error('[createTaskAction] insert failed:', {
       message: insertError.message,
       details: (insertError as { details?: string }).details,
