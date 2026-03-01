@@ -105,7 +105,7 @@ export default function TaskItem({
               transition: dragX === 0 ? 'transform 0.2s ease' : 'none',
               touchAction: 'pan-y',
             }}
-            className={`relative z-10 flex items-center gap-2 p-6 rounded-2xl border cursor-pointer ${
+            className={`relative z-10 flex min-w-0 items-center gap-2 p-6 rounded-2xl border cursor-pointer ${
               task.is_done
                 ? 'bg-zinc-950 border-zinc-900 opacity-40'
                 : 'bg-zinc-900 border-zinc-800 hover:border-blue-500'
@@ -130,12 +130,14 @@ export default function TaskItem({
                     }
                   }}
                   onClick={(event) => event.stopPropagation()}
-                  className="w-full py-1 text-task font-medium text-text-primary bg-transparent border-b-2 border-blue-500 outline-none"
+                  className="min-w-0 w-full py-1 text-task font-medium text-text-primary bg-transparent border-b-2 border-blue-500 outline-none"
                 />
               ) : (
                 <span
                   className={`block text-task font-medium transition-all ${
-                    task.is_done ? 'truncate line-through decoration-blue-500 decoration-4 text-text-tertiary' : 'truncate'
+                    task.is_done
+                      ? 'w-full overflow-hidden text-ellipsis whitespace-nowrap line-through decoration-blue-500 decoration-4 text-text-tertiary'
+                      : 'w-full overflow-hidden text-ellipsis whitespace-nowrap'
                   }`}
                 >
                   {task.content}
