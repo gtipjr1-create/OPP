@@ -115,7 +115,7 @@ export default function TaskItem({
             {task.is_done ? (
               <CheckCircle2 size={32} className="text-text-accent shrink-0" />
             ) : (
-              <Circle size={32} className="text-zinc-700 shrink-0" />
+              <Circle size={32} className="text-text-tertiary shrink-0" />
             )}
 
             <div className="flex-1">
@@ -135,7 +135,7 @@ export default function TaskItem({
               ) : (
                 <span
                   className={`block text-task font-medium transition-all ${
-                    task.is_done ? 'line-through decoration-blue-500 decoration-4 text-zinc-600' : ''
+                    task.is_done ? 'line-through decoration-blue-500 decoration-4 text-text-tertiary' : ''
                   }`}
                 >
                   {task.content}
@@ -169,7 +169,7 @@ export default function TaskItem({
               ) : (
                 <button
                   onClick={openDeleteConfirm}
-                  className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-zinc-500 hover:bg-zinc-800 hover:text-red-400"
+                  className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-text-tertiary hover:bg-white/5 hover:text-red-400"
                   aria-label="Delete task"
                 >
                   <Trash2 size={20} />

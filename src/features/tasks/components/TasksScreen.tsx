@@ -8,8 +8,9 @@ import { CSS } from '@dnd-kit/utilities';
 import { ChevronDown, GripVertical, Trash2 } from 'lucide-react';
 import { OppMark } from '@/components/OppMark';
 import Button from '@/components/ui/Button';
-
-import { APP_CONFIG } from '@/config/app';
+import Card from '@/components/ui/Card';
+import Input from '@/components/ui/Input';
+import SectionHeader from '@/components/ui/SectionHeader';
 
 import { createTaskAction, deleteTaskAction, reorderTaskPositionsAction } from '../actions';
 import { useTasksFeature } from '../useTasksFeature';
@@ -549,7 +550,7 @@ export default function TasksScreen() {
         <header className="mb-8">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
             <div>
-              <div className="text-label font-sans uppercase tracking-widest font-semibold text-text-tertiary">ACTIVE SESSION</div>
+              <SectionHeader>ACTIVE SESSION</SectionHeader>
 
               <div className="mt-2">
                 <div className="flex items-end gap-3">
@@ -624,8 +625,8 @@ export default function TasksScreen() {
               </div>
 
               <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                  <div className="text-label font-sans uppercase tracking-widest font-semibold text-text-tertiary">COMPLETION</div>
+                <Card>
+                  <SectionHeader>COMPLETION</SectionHeader>
                   <div className="mt-1 flex items-baseline justify-between">
                     <div className="text-[2.25rem] font-bold tracking-tight text-text-primary">{pct}%</div>
                     <div className="text-meta font-mono tracking-wide text-text-secondary">
@@ -635,10 +636,10 @@ export default function TasksScreen() {
                   <div className="mt-2 h-2 w-full rounded-[999px] bg-white/8">
                     <div className="h-2 rounded-full bg-blue-500/80" style={{ width: `${pct}%` }} />
                   </div>
-                </div>
+                </Card>
 
-                <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                  <div className="text-label font-sans uppercase tracking-widest font-semibold text-text-tertiary">WEIGHTED</div>
+                <Card>
+                  <SectionHeader>WEIGHTED</SectionHeader>
                   <div className="mt-1 flex items-baseline justify-between">
                     <div className="text-[2.25rem] font-bold tracking-tight text-text-primary">{weightedPct}%</div>
                     <div className="text-meta font-mono tracking-wide text-text-secondary">
@@ -648,16 +649,16 @@ export default function TasksScreen() {
                   <div className="mt-2 h-2 w-full rounded-[999px] bg-white/8">
                     <div className="h-2 rounded-full bg-blue-500/80" style={{ width: `${weightedPct}%` }} />
                   </div>
-                </div>
+                </Card>
 
-                <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                  <div className="text-label font-sans uppercase tracking-widest font-semibold text-text-tertiary">SCHEDULED</div>
+                <Card>
+                  <SectionHeader>SCHEDULED</SectionHeader>
                   <div className="mt-1 flex items-baseline justify-between">
                     <div className="text-[2.25rem] font-bold tracking-tight text-text-primary">{scheduled}</div>
                     <div className="text-meta font-mono tracking-wide text-text-secondary">items</div>
                   </div>
                   <div className="mt-2 text-meta font-mono tracking-wide text-text-secondary">Only tasks with a time appear on the rail.</div>
-                </div>
+                </Card>
               </div>
             </div>
 
@@ -700,9 +701,9 @@ export default function TasksScreen() {
         </header>
 
         <div className="grid gap-5 md:grid-cols-[208px_1fr]">
-          <aside className="order-2 rounded-3xl border border-white/10 bg-white/5 p-4 md:order-1">
+          <Card className="order-2 rounded-3xl md:order-1">
             <div className="mb-3 flex items-center justify-between">
-              <div className="text-label font-sans uppercase tracking-widest font-semibold text-text-tertiary">SCHEDULE</div>
+              <SectionHeader>SCHEDULE</SectionHeader>
               <button
                 type="button"
                 onClick={() => setIsScheduleOpen((value) => !value)}
@@ -750,11 +751,11 @@ export default function TasksScreen() {
                 );
               })}
             </div>
-          </aside>
+          </Card>
 
-          <main className="order-1 rounded-3xl border border-white/10 bg-white/5 p-4 md:order-2">
+          <Card className="order-1 rounded-3xl md:order-2">
             <div className="mb-4">
-              <div className="text-label font-sans uppercase tracking-widest font-semibold text-text-tertiary">WORK STACK</div>
+              <SectionHeader>WORK STACK</SectionHeader>
 
               <form
                 action={async (formData) => {
@@ -778,7 +779,7 @@ export default function TasksScreen() {
               >
                 <input type="hidden" name="list_id" value={activeListId ?? ''} />
                 <input type="hidden" name="content" value={withPriorityTag(newTaskText, selectedPriority)} />
-                <input
+                <Input
                   value={newTaskText}
                   disabled={!canEdit}
                   onChange={(event) => {
@@ -788,7 +789,7 @@ export default function TasksScreen() {
                     }
                   }}
                   placeholder="Add task..."
-                  className="min-h-[48px] w-full flex-1 bg-transparent text-task outline-none placeholder:text-white/40"
+                  className="min-h-[48px] flex-1"
                 />
                 <button
                   type="submit"
@@ -839,14 +840,14 @@ export default function TasksScreen() {
               <SortableContext items={orderedTaskIds} strategy={verticalListSortingStrategy}>
                 <div className="space-y-2">
                   {groups.length === 0 ? (
-                    <div className="rounded-2xl border border-white/10 bg-black/20 p-4 text-task font-medium text-text-secondary">
+                    <Card tone="muted" className="text-task font-medium text-text-secondary">
                       No tasks yet. Add your first item above.
-                    </div>
+                    </Card>
                   ) : null}
 
                   {groups.map((group) => (
                     <section key={group.label}>
-                      <div className="mb-2 text-label font-sans uppercase tracking-widest font-semibold text-text-tertiary">{group.label}</div>
+                      <SectionHeader className="mb-2">{group.label}</SectionHeader>
 
                       <div className="space-y-2">
                         {group.items.map((task) => (
@@ -867,12 +868,12 @@ export default function TasksScreen() {
                 </div>
               </SortableContext>
             </DndContext>
-          </main>
+          </Card>
         </div>
 
-        <div className="mt-4 rounded-3xl border border-white/10 bg-white/5 p-4">
+        <Card className="mt-4 rounded-3xl">
           <div className="flex items-center justify-between">
-            <div className="text-label font-sans uppercase tracking-widest font-semibold text-text-tertiary">ARCHIVED LOGS</div>
+            <SectionHeader>ARCHIVED LOGS</SectionHeader>
             <button
               type="button"
               onClick={() => setIsArchivedLogsOpen((value) => !value)}
@@ -889,9 +890,9 @@ export default function TasksScreen() {
 
           {isArchivedLogsOpen ? (
             <>
-              <div className="mt-2 flex items-center gap-3 rounded-2xl border border-white/10 bg-black/30 p-4">
-                <input placeholder="Search history..." className="flex-1 bg-transparent text-task outline-none placeholder:text-white/30" />
-              </div>
+              <Card tone="dark" className="mt-2 flex items-center gap-3">
+                <Input placeholder="Search history..." className="flex-1" />
+              </Card>
 
               <div className="mt-4 space-y-2 text-meta font-mono tracking-wide text-text-secondary">
                 {lists.slice(0, 6).map((list) => (
@@ -923,11 +924,11 @@ export default function TasksScreen() {
                   </button>
                 ))}
                 {lists.length === 0 ? <div>No archived sessions yet.</div> : null}
-                {lists.length > 6 ? <div className="text-label font-sans uppercase tracking-widest font-semibold text-text-tertiary">Showing latest 6 sessions.</div> : null}
+                {lists.length > 6 ? <SectionHeader>Showing latest 6 sessions.</SectionHeader> : null}
               </div>
             </>
           ) : null}
-        </div>
+        </Card>
       </div>
     </div>
   );

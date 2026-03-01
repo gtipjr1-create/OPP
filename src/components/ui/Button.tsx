@@ -12,7 +12,7 @@ type ButtonProps = {
 
 const variantClasses: Record<ButtonVariant, string> = {
   primary:
-    'bg-white text-black border border-white/10 hover:opacity-90 disabled:bg-white/20 disabled:text-white/50 disabled:border-white/10',
+    'bg-white text-black border border-white/10 hover:opacity-90 disabled:bg-white/20 disabled:text-text-tertiary disabled:border-white/10',
   secondary:
     'bg-transparent border border-white/20 text-text-secondary hover:bg-white/5 hover:text-text-primary disabled:opacity-40 disabled:cursor-not-allowed',
   ghost:
