@@ -655,7 +655,7 @@ export default function TasksScreen() {
               <SectionHeader>ACTIVE SESSION</SectionHeader>
 
               <div className="mt-2">
-                <div className="flex items-end gap-3">
+                <div className="flex items-end justify-center gap-3">
                   <OppMark size={48} />
                 </div>
                 {isEditingTitle ? (
@@ -672,7 +672,7 @@ export default function TasksScreen() {
                       }
                     }}
                     className={[
-                      'mt-2 w-full bg-transparent text-title font-sans uppercase tracking-tight font-bold text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black',
+                      'mt-2 w-full bg-transparent text-center text-title font-sans uppercase tracking-tight font-bold text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black',
                       canEdit ? 'opacity-100' : 'opacity-70',
                     ].join(' ')}
                   />
@@ -685,7 +685,7 @@ export default function TasksScreen() {
                       setTitleEdit(activeTitle);
                     }}
                     className={[
-                      'mt-2 text-left text-title font-sans uppercase tracking-tight font-bold text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black',
+                      'mt-2 w-full text-center text-title font-sans uppercase tracking-tight font-bold text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black',
                       canEdit ? 'opacity-100 hover:text-text-accent' : 'opacity-70',
                     ].join(' ')}
                   >
@@ -694,21 +694,23 @@ export default function TasksScreen() {
                 )}
               </div>
 
-              <div className="mt-2 flex flex-wrap items-center gap-3 text-meta font-mono tracking-wide text-text-secondary">
-                <div className="rounded-full border border-white/10 bg-white/5 px-3 py-1">{getTodayLabel()}</div>
+              <div className="mt-2 flex flex-col items-center gap-2">
+                <div className="flex flex-wrap items-center justify-center gap-3 text-meta font-mono tracking-wide text-text-secondary">
+                  <div className="rounded-full border border-white/10 bg-white/5 px-3 py-1">{getTodayLabel()}</div>
 
-                <button
-                  type="button"
-                  onClick={() => setIsLocked((value) => !value)}
-                  aria-pressed={!isLocked}
-                  aria-label={isLocked ? 'Unlock session editing' : 'Lock session editing'}
-                  className={[
-                    'rounded-full border px-3 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black',
-                    isLocked ? 'border-white/10 bg-white/5 text-text-secondary' : 'border-blue-500/40 bg-blue-500/10 text-text-accent',
-                  ].join(' ')}
-                >
-                  {isLocked ? 'LOCKED' : 'UNLOCKED'}
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsLocked((value) => !value)}
+                    aria-pressed={!isLocked}
+                    aria-label={isLocked ? 'Unlock session editing' : 'Lock session editing'}
+                    className={[
+                      'rounded-full border px-3 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black',
+                      isLocked ? 'border-white/10 bg-white/5 text-text-secondary' : 'border-blue-500/40 bg-blue-500/10 text-text-accent',
+                    ].join(' ')}
+                  >
+                    {isLocked ? 'LOCKED' : 'UNLOCKED'}
+                  </button>
+                </div>
 
                 <div
                   className={[
@@ -722,10 +724,10 @@ export default function TasksScreen() {
                 >
                   {sessionStatus}
                 </div>
+              </div>
 
-                <div className="text-meta font-mono tracking-wide text-text-secondary">
-                  {total} tasks | {high} high priority | {scheduled} scheduled
-                </div>
+              <div className="mt-2 text-meta font-mono tracking-wide text-text-secondary">
+                {total} tasks | {high} high priority | {scheduled} scheduled
               </div>
 
               <StatsCards

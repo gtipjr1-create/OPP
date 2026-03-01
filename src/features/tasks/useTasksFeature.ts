@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { reportClientError } from '@/lib/telemetry';
 
 import {
   createList,
@@ -63,6 +64,10 @@ function buildStatsMap(lists: ListRow[], allTasks: TaskRow[]): Record<string, Li
   return stats;
 }
 
+function errorMessageFrom(error: unknown, fallback: string): string {
+  return error instanceof Error ? error.message : fallback;
+}
+
 export function useTasksFeature() {
   const [lists, setLists] = useState<ListRow[]>([]);
   const [activeListId, setActiveListId] = useState<string | null>(null);
@@ -74,6 +79,16 @@ export function useTasksFeature() {
   const [titleEdit, setTitleEdit] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [listStatsById, setListStatsById] = useState<Record<string, ListStats>>({});
+
+  const handleClientFailure = useCallback(
+    (event: string, fallbackMessage: string, error: unknown, context?: Record<string, unknown>) => {
+      const message = errorMessageFrom(error, fallbackMessage);
+      reportClientError(event, error, context);
+      setErrorMessage(message);
+      return message;
+    },
+    [],
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -96,8 +111,7 @@ export function useTasksFeature() {
         }
       })
       .catch((error) => {
-        const message = error instanceof Error ? error.message : 'Failed to load sessions.';
-        setErrorMessage(message);
+        handleClientFailure('tasks.bootstrap.list_lists_failed', 'Failed to load sessions.', error);
       })
       .finally(() => {
         if (!cancelled) {
@@ -108,7 +122,7 @@ export function useTasksFeature() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [handleClientFailure]);
 
   useEffect(() => {
     if (!activeListId) {
@@ -125,14 +139,15 @@ export function useTasksFeature() {
         }
       })
       .catch((error) => {
-        const message = error instanceof Error ? error.message : 'Failed to load tasks.';
-        setErrorMessage(message);
+        handleClientFailure('tasks.bootstrap.list_tasks_failed', 'Failed to load tasks.', error, {
+          activeListId,
+        });
       });
 
     return () => {
       cancelled = true;
     };
-  }, [activeListId]);
+  }, [activeListId, handleClientFailure]);
 
   const reloadActiveTasks = useCallback(async () => {
     if (!activeListId) {
@@ -144,10 +159,9 @@ export function useTasksFeature() {
       setTasks(data);
       setErrorMessage(null);
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to load tasks.';
-      setErrorMessage(message);
+      handleClientFailure('tasks.reload_active_tasks_failed', 'Failed to load tasks.', error, { activeListId });
     }
-  }, [activeListId]);
+  }, [activeListId, handleClientFailure]);
 
   const selectList = useCallback(
     (listId: string) => {
@@ -185,11 +199,10 @@ export function useTasksFeature() {
       setTitleEdit(created.title);
       setErrorMessage(null);
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to create session.';
-      setErrorMessage(message);
+      const message = handleClientFailure('tasks.create_session_failed', 'Failed to create session.', error);
       throw error instanceof Error ? error : new Error(message);
     }
-  }, []);
+  }, [handleClientFailure]);
 
   const addTask = useCallback(async (contentOverride?: string) => {
     if (!activeListId) {
@@ -213,10 +226,9 @@ export function useTasksFeature() {
       setNewTaskText('');
       setErrorMessage(null);
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to add task.';
-      setErrorMessage(message);
+      handleClientFailure('tasks.add_failed', 'Failed to add task.', error, { activeListId });
     }
-  }, [activeListId, newTaskText]);
+  }, [activeListId, handleClientFailure, newTaskText]);
 
   const toggleTask = useCallback(async (taskId: string, currentStatus: boolean) => {
     if (!activeListId) {
@@ -238,10 +250,13 @@ export function useTasksFeature() {
       });
       setErrorMessage(null);
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to toggle task.';
-      setErrorMessage(message);
+      handleClientFailure('tasks.toggle_failed', 'Failed to toggle task.', error, {
+        activeListId,
+        taskId,
+        nextStatus: !currentStatus,
+      });
     }
-  }, [activeListId]);
+  }, [activeListId, handleClientFailure]);
 
   const deleteTask = useCallback(async (taskId: string) => {
     if (!activeListId) {
@@ -266,10 +281,9 @@ export function useTasksFeature() {
       }
       setErrorMessage(null);
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to delete task.';
-      setErrorMessage(message);
+      handleClientFailure('tasks.delete_failed', 'Failed to delete task.', error, { activeListId, taskId });
     }
-  }, [activeListId, tasks]);
+  }, [activeListId, handleClientFailure, tasks]);
 
   const saveTaskEdit = useCallback(async (taskId: string, nextText: string) => {
     const content = nextText.trim();
@@ -288,10 +302,9 @@ export function useTasksFeature() {
       setEditingTaskId(null);
       setErrorMessage(null);
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to save task.';
-      setErrorMessage(message);
+      handleClientFailure('tasks.rename_failed', 'Failed to save task.', error, { taskId });
     }
-  }, []);
+  }, [handleClientFailure]);
 
   const saveTitleEdit = useCallback(async () => {
     if (!activeListId) {
@@ -315,10 +328,9 @@ export function useTasksFeature() {
       setIsEditingTitle(false);
       setErrorMessage(null);
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to rename session.';
-      setErrorMessage(message);
+      handleClientFailure('sessions.rename_failed', 'Failed to rename session.', error, { activeListId });
     }
-  }, [activeListId, titleEdit]);
+  }, [activeListId, handleClientFailure, titleEdit]);
 
   const deleteList = useCallback(
     async (listId: string) => {
@@ -343,11 +355,10 @@ export function useTasksFeature() {
         });
         setErrorMessage(null);
       } catch (error) {
-        const message = error instanceof Error ? error.message : 'Failed to delete session.';
-        setErrorMessage(message);
+        handleClientFailure('sessions.delete_failed', 'Failed to delete session.', error, { listId });
       }
     },
-    [activeListId],
+    [activeListId, handleClientFailure],
   );
 
   const activeTitle = useMemo(

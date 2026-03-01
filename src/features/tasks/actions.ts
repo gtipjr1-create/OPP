@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 
 import { createSupabaseServerClient } from '@/lib/supabaseServer';
+import { reportServerError } from '@/lib/telemetry';
 import { parseTaskSemantics } from './lib/taskSemantics';
 
 function isMissingSemanticsColumnsError(error: unknown): boolean {
@@ -51,15 +52,14 @@ export async function createTaskAction(formData: FormData) {
     data: { user },
     error,
   } = await supabase.auth.getUser();
-  console.log('SERVER getUser:', { hasUser: !!user, error: error?.message });
 
   if (error) {
-    console.error('[createTaskAction] auth.getUser failed:', error.message);
+    reportServerError('tasks.create.auth_get_user_failed', error, { listId });
     throw new Error(error.message);
   }
 
   if (!user) {
-    console.error('[createTaskAction] Auth session missing: no user returned from getUser().');
+    reportServerError('tasks.create.auth_missing_user', new Error('No user returned from getUser()'), { listId });
     redirect('/login');
   }
 
@@ -72,6 +72,7 @@ export async function createTaskAction(formData: FormData) {
     .maybeSingle();
 
   if (positionError) {
+    reportServerError('tasks.create.position_lookup_failed', positionError, { listId, userId: user.id });
     throw new Error(positionError.message);
   }
 
@@ -101,16 +102,10 @@ export async function createTaskAction(formData: FormData) {
         revalidatePath('/');
         return;
       }
+      reportServerError('tasks.create.legacy_insert_failed', legacyInsertError, { listId, userId: user.id });
       throw new Error(legacyInsertError.message);
     }
-    console.error('[createTaskAction] insert failed:', {
-      message: insertError.message,
-      details: (insertError as { details?: string }).details,
-      hint: (insertError as { hint?: string }).hint,
-      code: (insertError as { code?: string }).code,
-      listId,
-      userId: user.id,
-    });
+    reportServerError('tasks.create.insert_failed', insertError, { listId, userId: user.id });
     throw new Error(insertError.message);
   }
 
@@ -134,6 +129,7 @@ export async function reorderTaskPositionsAction(listId: string, orderedTaskIds:
   } = await supabase.auth.getUser();
 
   if (authError) {
+    reportServerError('tasks.reorder.auth_get_user_failed', authError, { listId: normalizedListId });
     throw new Error(authError.message);
   }
 
@@ -149,6 +145,7 @@ export async function reorderTaskPositionsAction(listId: string, orderedTaskIds:
     .order('created_at', { ascending: true });
 
   if (listTasksError) {
+    reportServerError('tasks.reorder.list_fetch_failed', listTasksError, { listId: normalizedListId, userId: user.id });
     throw new Error(listTasksError.message);
   }
 
@@ -168,7 +165,7 @@ export async function reorderTaskPositionsAction(listId: string, orderedTaskIds:
   });
 
   if (reorderError) {
-    console.error('[RPC] update_task_positions failed', reorderError);
+    reportServerError('tasks.reorder.rpc_failed', reorderError, { listId: normalizedListId, userId: user.id });
     throw new Error(reorderError.message);
   }
 
@@ -188,12 +185,12 @@ export async function deleteTaskAction(taskId: string) {
   } = await supabase.auth.getUser();
 
   if (error) {
-    console.error('[deleteTaskAction] auth.getUser failed:', error.message);
+    reportServerError('tasks.delete.auth_get_user_failed', error, { taskId: id });
     throw new Error(error.message);
   }
 
   if (!user) {
-    console.error('[deleteTaskAction] Auth session missing: no user returned from getUser().');
+    reportServerError('tasks.delete.auth_missing_user', new Error('No user returned from getUser()'), { taskId: id });
     redirect('/login');
   }
 
@@ -204,6 +201,7 @@ export async function deleteTaskAction(taskId: string) {
     .maybeSingle();
 
   if (fetchError) {
+    reportServerError('tasks.delete.lookup_failed', fetchError, { taskId: id, userId: user.id });
     throw new Error(fetchError.message);
   }
 
@@ -214,7 +212,7 @@ export async function deleteTaskAction(taskId: string) {
 
   const { error: deleteError } = await supabase.from('tasks').delete().eq('id', id);
   if (deleteError) {
-    console.error('[deleteTaskAction] delete failed:', deleteError.message);
+    reportServerError('tasks.delete.delete_failed', deleteError, { taskId: id, userId: user.id });
     throw new Error(deleteError.message);
   }
 
@@ -226,6 +224,11 @@ export async function deleteTaskAction(taskId: string) {
     .order('created_at', { ascending: true });
 
   if (remainingError) {
+    reportServerError('tasks.delete.remaining_fetch_failed', remainingError, {
+      taskId: id,
+      listId: existing.list_id,
+      userId: user.id,
+    });
     throw new Error(remainingError.message);
   }
 
@@ -237,7 +240,11 @@ export async function deleteTaskAction(taskId: string) {
   });
 
   if (reorderError) {
-    console.error('[deleteTaskAction] update_task_positions failed:', reorderError);
+    reportServerError('tasks.delete.reorder_failed', reorderError, {
+      taskId: id,
+      listId: existing.list_id,
+      userId: user.id,
+    });
     throw new Error(reorderError.message);
   }
 
