@@ -190,6 +190,7 @@ type SortableTaskCardProps = {
   isActiveDrag: boolean;
   onToggleTask: (taskId: string, currentStatus: boolean) => void;
   onDeleteTask: (taskId: string) => Promise<void> | void;
+  onSaveTask: (taskId: string, nextText: string) => Promise<void> | void;
 };
 
 function SortableTaskCard({
@@ -198,6 +199,7 @@ function SortableTaskCard({
   isActiveDrag,
   onToggleTask,
   onDeleteTask,
+  onSaveTask,
 }: SortableTaskCardProps) {
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } =
     useSortable({ id: task.id, disabled: !canEdit });
@@ -210,7 +212,16 @@ function SortableTaskCard({
   // ✅ Confirm delete (tap trash → confirm)
   const [confirmDelete, setConfirmDelete] = React.useState(false);
   const [isDeleting, setIsDeleting] = React.useState(false);
+  const [isSavingEdit, setIsSavingEdit] = React.useState(false);
+  const [isEditing, setIsEditing] = React.useState(false);
+  const [editValue, setEditValue] = React.useState(task.title);
   const [isExpanded, setIsExpanded] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!isEditing) {
+      setEditValue(task.title);
+    }
+  }, [isEditing, task.title]);
 
   const openConfirmDelete = (event: React.MouseEvent) => {
     event.stopPropagation();
@@ -236,6 +247,35 @@ function SortableTaskCard({
     }
   };
 
+  const startEdit = (event: React.MouseEvent) => {
+    event.stopPropagation();
+    if (!canEdit || isDeleting || isSavingEdit) return;
+    setIsEditing(true);
+    setIsExpanded(true);
+    setEditValue(task.title);
+  };
+
+  const saveEdit = async () => {
+    const next = editValue.trim();
+    if (!next) {
+      setIsEditing(false);
+      setEditValue(task.title);
+      return;
+    }
+    if (next === task.title) {
+      setIsEditing(false);
+      return;
+    }
+
+    setIsSavingEdit(true);
+    try {
+      await Promise.resolve(onSaveTask(task.id, next));
+      setIsEditing(false);
+    } finally {
+      setIsSavingEdit(false);
+    }
+  };
+
   return (
     <div
       ref={setNodeRef}
@@ -257,44 +297,71 @@ function SortableTaskCard({
         />
       </label>
 
-      <button
-        type="button"
-        onClick={() => setIsExpanded((value) => !value)}
-        className="min-w-0 basis-0 flex-1 overflow-hidden rounded-md text-left"
-        aria-expanded={isExpanded}
-        aria-label={isExpanded ? 'Collapse task details' : 'Expand task details'}
-      >
-        <div
-          className={[
-            'block',
-            isExpanded ? 'whitespace-normal break-words' : 'truncate',
-            task.done ? 'line-through text-text-tertiary' : '',
-          ].join(' ')}
+      {isEditing ? (
+        <div className="min-w-0 basis-0 flex-1 overflow-hidden rounded-md">
+          <input
+            value={editValue}
+            disabled={!canEdit || isSavingEdit}
+            onChange={(event) => setEditValue(event.target.value)}
+            onBlur={() => {
+              void saveEdit();
+            }}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                void saveEdit();
+              }
+              if (event.key === 'Escape') {
+                setIsEditing(false);
+                setEditValue(task.title);
+              }
+            }}
+            className="min-h-[44px] w-full bg-transparent text-task font-medium text-text-primary outline-none"
+            autoFocus
+          />
+          <div className="text-meta font-mono tracking-wide text-text-secondary">
+            {isSavingEdit ? 'Saving...' : 'Press Enter to save'}
+          </div>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setIsExpanded((value) => !value)}
+          className="min-w-0 basis-0 flex-1 overflow-hidden rounded-md text-left"
+          aria-expanded={isExpanded}
+          aria-label={isExpanded ? 'Collapse task details' : 'Expand task details'}
         >
-          {task.title}
-        </div>
-        <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-meta font-mono tracking-wide text-text-secondary">
-          <span>{task.time ? `@ ${formatDisplayTime(task.time)}` : '-'}</span>
-          <span className="text-text-tertiary">|</span>
-          <span
-            className={
-              task.priority === 'high'
-                ? 'text-[color:var(--priority-high)]'
-                : task.priority === 'normal'
-                  ? 'text-[color:var(--priority-normal)]'
-                  : 'text-[color:var(--priority-low)]'
-            }
+          <div
+            className={[
+              'block',
+              isExpanded ? 'whitespace-normal break-words' : 'truncate',
+              task.done ? 'line-through text-text-tertiary' : '',
+            ].join(' ')}
           >
-            {task.priority.toUpperCase()}
-          </span>
-          {task.done ? (
-            <>
-              <span className="text-text-tertiary">|</span>
-              <span className="text-[color:var(--state-completed)]">COMPLETED</span>
-            </>
-          ) : null}
-        </div>
-      </button>
+            {task.title}
+          </div>
+          <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-meta font-mono tracking-wide text-text-secondary">
+            <span>{task.time ? `@ ${formatDisplayTime(task.time)}` : '-'}</span>
+            <span className="text-text-tertiary">|</span>
+            <span
+              className={
+                task.priority === 'high'
+                  ? 'text-[color:var(--priority-high)]'
+                  : task.priority === 'normal'
+                    ? 'text-[color:var(--priority-normal)]'
+                    : 'text-[color:var(--priority-low)]'
+              }
+            >
+              {task.priority.toUpperCase()}
+            </span>
+            {task.done ? (
+              <>
+                <span className="text-text-tertiary">|</span>
+                <span className="text-[color:var(--state-completed)]">COMPLETED</span>
+              </>
+            ) : null}
+          </div>
+        </button>
+      )}
 
       {confirmDelete ? (
         <div className="absolute right-3 top-1/2 z-10 flex max-w-[calc(100%-5rem)] shrink-0 -translate-y-1/2 items-center gap-2 overflow-hidden rounded-xl border border-white/10 bg-black/80 px-2 py-1">
@@ -319,9 +386,18 @@ function SortableTaskCard({
         <div className="flex w-full shrink-0 items-center justify-end gap-1">
           <button
             type="button"
+            onClick={startEdit}
+            disabled={!canEdit || isDeleting || isSavingEdit}
+            className="min-h-[42px] min-w-[42px] rounded-lg border border-white/10 bg-white/5 px-2 text-label font-sans uppercase tracking-widest font-semibold text-text-secondary hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40 sm:min-h-[44px] sm:min-w-[44px]"
+            aria-label="Edit task"
+          >
+            Edit
+          </button>
+          <button
+            type="button"
             onClick={openConfirmDelete}
             disabled={!canEdit || isDeleting}
-            className="min-h-[42px] min-w-[42px] rounded-lg border border-white/10 bg-white/5 p-2 text-text-tertiary hover:bg-white/10 hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-40 sm:min-h-[44px] sm:min-w-[44px]"
+            className="inline-flex min-h-[42px] min-w-[42px] items-center justify-center rounded-lg border border-white/10 bg-white/5 p-2 text-text-tertiary hover:bg-white/10 hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-40 sm:min-h-[44px] sm:min-w-[44px]"
             aria-label="Delete task"
           >
             <Trash2 size={14} />
@@ -333,7 +409,7 @@ function SortableTaskCard({
             {...listeners}
             disabled={!canEdit}
             aria-label="Drag to reorder task"
-            className="drag-handle min-h-[42px] min-w-[42px] cursor-grab rounded-lg border border-white/10 bg-white/5 p-2 text-text-secondary active:scale-95 active:cursor-grabbing touch-none select-none disabled:cursor-not-allowed disabled:opacity-40 sm:min-h-[44px] sm:min-w-[44px]"
+            className="drag-handle inline-flex min-h-[42px] min-w-[42px] cursor-grab items-center justify-center rounded-lg border border-white/10 bg-white/5 p-2 text-text-secondary active:scale-95 active:cursor-grabbing touch-none select-none disabled:cursor-not-allowed disabled:opacity-40 sm:min-h-[44px] sm:min-w-[44px]"
             style={{ touchAction: 'none' }}
           >
             <GripVertical size={14} />
@@ -362,6 +438,7 @@ export default function TasksScreen() {
     activeTitle,
     reloadActiveTasks,
     createNewList,
+    saveTaskEdit,
     toggleTask,
     saveTitleEdit,
   } = useTasksFeature();
@@ -822,6 +899,9 @@ export default function TasksScreen() {
                               void toggleTask(taskId, currentStatus);
                             }}
                             onDeleteTask={deleteTask}
+                            onSaveTask={(taskId, nextText) => {
+                              void saveTaskEdit(taskId, nextText);
+                            }}
                           />
                         ))}
                       </div>
