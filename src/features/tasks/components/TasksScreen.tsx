@@ -16,6 +16,7 @@ import SectionHeader from '@/components/ui/SectionHeader';
 import ArchiveLogsPanel from './ArchiveLogsPanel';
 import ScheduleRail from './ScheduleRail';
 import StatsCards from './StatsCards';
+import { selectScheduleDotPriorityByHour } from '../lib/scheduleDots';
 
 import { createTaskAction, deleteTaskAction, reorderTaskPositionsAction } from '../actions';
 import { useTasksFeature } from '../useTasksFeature';
@@ -442,27 +443,7 @@ export default function TasksScreen() {
   const timed = scheduledTasks
     .slice()
     .sort((a, b) => (a.time! > b.time! ? 1 : -1));
-  const scheduleDotPriorityByHour = React.useMemo(() => {
-    const byHour: Record<number, Priority | undefined> = {};
-    for (const task of timed) {
-      if (!task.time || !task.taggedPriority) continue;
-      const hour = Number(task.time.split(':')[0]);
-      const current = byHour[hour];
-      if (current === 'high') continue;
-      if (task.taggedPriority === 'high') {
-        byHour[hour] = 'high';
-        continue;
-      }
-      if (task.taggedPriority === 'normal') {
-        byHour[hour] = current === 'low' ? 'normal' : current ?? 'normal';
-        continue;
-      }
-      if (task.taggedPriority === 'low' && !current) {
-        byHour[hour] = 'low';
-      }
-    }
-    return byHour;
-  }, [timed]);
+  const scheduleDotPriorityByHour = React.useMemo(() => selectScheduleDotPriorityByHour(timed), [timed]);
 
   const groups: { label: string; items: Task[] }[] = [
     { label: 'HIGH PRIORITY', items: orderedTasks.filter((task) => task.priority === 'high') },

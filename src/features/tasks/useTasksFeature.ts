@@ -16,6 +16,13 @@ import {
   setTaskDone,
 } from './service';
 import type { ListRow, TaskRow } from './types';
+import {
+  applyCreateToStats,
+  applyDeleteToStats,
+  applyDeleteToTasks,
+  applyToggleToStats,
+  applyToggleToTasks,
+} from './lib/taskWorkflow';
 
 type ListStats = {
   totalTasks: number;
@@ -198,22 +205,9 @@ export function useTasksFeature() {
       const created = await createTask(activeListId, content);
       setTasks((previous) => [created, ...previous]);
       setListStatsById((previous) => {
-        const current = previous[activeListId] ?? {
-          totalTasks: 0,
-          completedTasks: 0,
-          completionPct: 0,
-          modifiedAt: created.created_at,
-        };
-        const nextTotal = current.totalTasks + 1;
-        const nextCompleted = current.completedTasks + (created.is_done ? 1 : 0);
         return {
           ...previous,
-          [activeListId]: {
-            totalTasks: nextTotal,
-            completedTasks: nextCompleted,
-            completionPct: nextTotal > 0 ? Math.round((nextCompleted / nextTotal) * 100) : 0,
-            modifiedAt: created.created_at,
-          },
+          [activeListId]: applyCreateToStats(previous[activeListId], created),
         };
       });
       setNewTaskText('');
@@ -231,26 +225,15 @@ export function useTasksFeature() {
 
     try {
       await setTaskDone(taskId, !currentStatus);
-      setTasks((previous) =>
-        previous.map((task) =>
-          task.id === taskId ? { ...task, is_done: !currentStatus } : task,
-        ),
-      );
+      setTasks((previous) => applyToggleToTasks(previous, taskId, !currentStatus));
       setListStatsById((previous) => {
         const current = previous[activeListId];
         if (!current) {
           return previous;
         }
-        const nextCompleted = current.completedTasks + (!currentStatus ? 1 : -1);
         return {
           ...previous,
-          [activeListId]: {
-            ...current,
-            completedTasks: nextCompleted,
-            completionPct:
-              current.totalTasks > 0 ? Math.round((nextCompleted / current.totalTasks) * 100) : 0,
-            modifiedAt: new Date().toISOString(),
-          },
+          [activeListId]: applyToggleToStats(current, !currentStatus, new Date().toISOString()),
         };
       });
       setErrorMessage(null);
@@ -268,26 +251,16 @@ export function useTasksFeature() {
     try {
       const taskToDelete = tasks.find((task) => task.id === taskId);
       await removeTask(taskId);
-      setTasks((previous) => previous.filter((task) => task.id !== taskId));
+      setTasks((previous) => applyDeleteToTasks(previous, taskId));
       if (taskToDelete) {
         setListStatsById((previous) => {
           const current = previous[activeListId];
           if (!current) {
             return previous;
           }
-          const nextTotal = Math.max(0, current.totalTasks - 1);
-          const nextCompleted =
-            current.completedTasks - (taskToDelete.is_done ? 1 : 0);
           return {
             ...previous,
-            [activeListId]: {
-              ...current,
-              totalTasks: nextTotal,
-              completedTasks: Math.max(0, nextCompleted),
-              completionPct:
-                nextTotal > 0 ? Math.round((Math.max(0, nextCompleted) / nextTotal) * 100) : 0,
-              modifiedAt: new Date().toISOString(),
-            },
+            [activeListId]: applyDeleteToStats(current, taskToDelete.is_done, new Date().toISOString()),
           };
         });
       }
