@@ -276,6 +276,43 @@ function SortableTaskCard({
     }
   };
 
+  if (confirmDelete) {
+    return (
+      <div
+        ref={setNodeRef}
+        style={style}
+        data-task-id={task.id}
+        className={[
+          'draggable-row relative box-border grid w-full max-w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 overflow-hidden rounded-2xl border border-white/10 bg-black/30 px-3 py-2.5 sm:px-4 sm:py-3',
+          isDragging || isActiveDrag ? 'opacity-60' : '',
+          task.done ? 'opacity-80' : '',
+        ].join(' ')}
+      >
+        <div className="col-span-full flex w-full items-center justify-between gap-3">
+          <span className="text-meta font-mono tracking-wide text-text-secondary">Delete this task?</span>
+          <div className="flex shrink-0 items-center gap-2">
+            <button
+              type="button"
+              onClick={cancelConfirmDelete}
+              disabled={isDeleting}
+              className="min-h-[40px] shrink-0 whitespace-nowrap rounded-lg border border-white/10 bg-white/5 px-3 text-label font-sans uppercase tracking-widest font-semibold text-text-secondary hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Cancel
+            </button>
+            <Button
+              variant="danger"
+              onClick={confirmAndDelete}
+              disabled={isDeleting}
+              className="min-h-[40px] shrink-0 whitespace-nowrap rounded-lg px-3"
+            >
+              {isDeleting ? '...' : 'Delete'}
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       ref={setNodeRef}
@@ -364,59 +401,38 @@ function SortableTaskCard({
         </button>
       )}
 
-      {confirmDelete ? (
-        <div className="absolute right-3 top-1/2 z-10 flex max-w-[calc(100%-5rem)] shrink-0 -translate-y-1/2 items-center gap-2 overflow-hidden rounded-xl border border-white/10 bg-black/80 px-2 py-1">
-          <button
-            type="button"
-            onClick={cancelConfirmDelete}
-            disabled={isDeleting}
-            className="min-h-[40px] shrink-0 whitespace-nowrap rounded-lg border border-white/10 bg-white/5 px-3 text-label font-sans uppercase tracking-widest font-semibold text-text-secondary hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            Cancel
-          </button>
-          <Button
-            variant="danger"
-            onClick={confirmAndDelete}
-            disabled={isDeleting}
-            className="min-h-[40px] shrink-0 whitespace-nowrap rounded-lg px-3"
-          >
-            {isDeleting ? '...' : 'Delete'}
-          </Button>
-        </div>
-      ) : (
-        <div className="flex shrink-0 items-center justify-end gap-1">
-          <button
-            type="button"
-            onClick={startEdit}
-            disabled={!canEdit || isDeleting || isSavingEdit}
-            className="min-h-[42px] min-w-[42px] rounded-lg border border-white/10 bg-white/5 px-2 text-label font-sans uppercase tracking-widest font-semibold text-text-secondary hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black disabled:cursor-not-allowed disabled:opacity-40 sm:min-h-[44px] sm:min-w-[44px]"
-            aria-label="Edit task"
-          >
-            Edit
-          </button>
-          <button
-            type="button"
-            onClick={openConfirmDelete}
-            disabled={!canEdit || isDeleting}
-            className="inline-flex min-h-[42px] min-w-[42px] items-center justify-center rounded-lg border border-white/10 bg-white/5 p-2 text-text-tertiary hover:bg-white/10 hover:text-red-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black disabled:cursor-not-allowed disabled:opacity-40 sm:min-h-[44px] sm:min-w-[44px]"
-            aria-label="Delete task"
-          >
-            <Trash2 size={14} />
-          </button>
-          <button
-            ref={setActivatorNodeRef}
-            type="button"
-            {...attributes}
-            {...listeners}
-            disabled={!canEdit}
-            aria-label="Drag to reorder task"
-            className="drag-handle inline-flex min-h-[42px] min-w-[42px] cursor-grab items-center justify-center rounded-lg border border-white/10 bg-white/5 p-2 text-text-secondary active:scale-95 active:cursor-grabbing touch-none select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black disabled:cursor-not-allowed disabled:opacity-40 sm:min-h-[44px] sm:min-w-[44px]"
-            style={{ touchAction: 'none' }}
-          >
-            <GripVertical size={14} />
-          </button>
-        </div>
-      )}
+      <div className="flex shrink-0 items-center justify-end gap-1">
+        <button
+          type="button"
+          onClick={startEdit}
+          disabled={!canEdit || isDeleting || isSavingEdit}
+          className="min-h-[42px] min-w-[42px] rounded-lg border border-white/10 bg-white/5 px-2 text-label font-sans uppercase tracking-widest font-semibold text-text-secondary hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black disabled:cursor-not-allowed disabled:opacity-40 sm:min-h-[44px] sm:min-w-[44px]"
+          aria-label="Edit task"
+        >
+          Edit
+        </button>
+        <button
+          type="button"
+          onClick={openConfirmDelete}
+          disabled={!canEdit || isDeleting}
+          className="inline-flex min-h-[42px] min-w-[42px] items-center justify-center rounded-lg border border-white/10 bg-white/5 p-2 text-text-tertiary hover:bg-white/10 hover:text-red-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black disabled:cursor-not-allowed disabled:opacity-40 sm:min-h-[44px] sm:min-w-[44px]"
+          aria-label="Delete task"
+        >
+          <Trash2 size={14} />
+        </button>
+        <button
+          ref={setActivatorNodeRef}
+          type="button"
+          {...attributes}
+          {...listeners}
+          disabled={!canEdit}
+          aria-label="Drag to reorder task"
+          className="drag-handle inline-flex min-h-[42px] min-w-[42px] cursor-grab items-center justify-center rounded-lg border border-white/10 bg-white/5 p-2 text-text-secondary active:scale-95 active:cursor-grabbing touch-none select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black disabled:cursor-not-allowed disabled:opacity-40 sm:min-h-[44px] sm:min-w-[44px]"
+          style={{ touchAction: 'none' }}
+        >
+          <GripVertical size={14} />
+        </button>
+      </div>
     </div>
   );
 }
