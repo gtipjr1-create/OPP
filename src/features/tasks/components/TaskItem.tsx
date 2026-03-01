@@ -101,60 +101,25 @@ export default function TaskItem({
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
             style={{
-              transform: `translateX(${dragX}px)`,
+              transform: confirmDelete ? 'translateX(0px)' : `translateX(${dragX}px)`,
               transition: dragX === 0 ? 'transform 0.2s ease' : 'none',
               touchAction: 'pan-y',
             }}
-            className={`relative z-10 flex min-w-0 items-center gap-2 p-6 rounded-2xl border cursor-pointer ${
-              task.is_done
-                ? 'bg-zinc-950 border-zinc-900 opacity-40'
-                : 'bg-zinc-900 border-zinc-800 hover:border-blue-500'
+            className={`relative z-10 rounded-2xl border cursor-pointer ${
+              confirmDelete
+                ? 'bg-black/40 border-white/10'
+                : task.is_done
+                  ? 'bg-zinc-950 border-zinc-900 opacity-40'
+                  : 'bg-zinc-900 border-zinc-800 hover:border-blue-500'
             }`}
             onClick={() => !isEditing && !confirmDelete && toggleTask(task.id, task.is_done)}
           >
-            {task.is_done ? (
-              <CheckCircle2 size={32} className="text-text-accent shrink-0" />
-            ) : (
-              <Circle size={32} className="text-text-tertiary shrink-0" />
-            )}
-
-            <div className="min-w-0 flex-1 overflow-hidden">
-              {isEditing ? (
-                <input
-                  defaultValue={task.content}
-                  autoFocus
-                  onBlur={(event) => saveEdit(task.id, event.currentTarget.value)}
-                  onKeyDown={(event) => {
-                    if (event.key === 'Enter') {
-                      saveEdit(task.id, event.currentTarget.value);
-                    }
-                  }}
-                  onClick={(event) => event.stopPropagation()}
-                  className="min-w-0 w-full py-1 text-task font-medium text-text-primary bg-transparent border-b-2 border-blue-500 outline-none"
-                />
-              ) : (
-                <span
-                  className={`block text-task font-medium transition-all ${
-                    task.is_done
-                      ? 'w-full overflow-hidden text-ellipsis whitespace-nowrap line-through decoration-blue-500 decoration-4 text-text-tertiary'
-                      : 'w-full overflow-hidden text-ellipsis whitespace-nowrap'
-                  }`}
-                >
-                  {task.content}
+            {confirmDelete ? (
+              <div className="flex items-center justify-between gap-3 p-6">
+                <span className="text-meta font-mono tracking-wide text-text-secondary">
+                  Delete this task?
                 </span>
-              )}
-            </div>
-
-            <div className="shrink-0 flex items-center gap-2 transition-opacity opacity-0 group-hover:opacity-100">
-              <button
-                onClick={(event) => startEditing(task.id, event)}
-                className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-text-tertiary hover:bg-white/5 hover:text-text-accent"
-              >
-                <ListChecks size={20} />
-              </button>
-
-              {confirmDelete ? (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 shrink-0">
                   <button
                     onClick={cancelDeleteConfirm}
                     className="min-h-[44px] rounded-lg border border-white/10 bg-white/5 px-3 text-label font-sans uppercase tracking-widest font-semibold text-text-secondary hover:bg-white/10"
@@ -168,16 +133,60 @@ export default function TaskItem({
                     Delete
                   </button>
                 </div>
-              ) : (
-                <button
-                  onClick={openDeleteConfirm}
-                  className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-text-tertiary hover:bg-white/5 hover:text-red-400"
-                  aria-label="Delete task"
-                >
-                  <Trash2 size={20} />
-                </button>
-              )}
-            </div>
+              </div>
+            ) : (
+              <div className="flex min-w-0 items-center gap-2 p-6">
+                {task.is_done ? (
+                  <CheckCircle2 size={32} className="text-text-accent shrink-0" />
+                ) : (
+                  <Circle size={32} className="text-text-tertiary shrink-0" />
+                )}
+
+                <div className="min-w-0 flex-1 overflow-hidden">
+                  {isEditing ? (
+                    <input
+                      defaultValue={task.content}
+                      autoFocus
+                      onBlur={(event) => saveEdit(task.id, event.currentTarget.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter') {
+                          saveEdit(task.id, event.currentTarget.value);
+                        }
+                      }}
+                      onClick={(event) => event.stopPropagation()}
+                      className="min-w-0 w-full py-1 text-task font-medium text-text-primary bg-transparent border-b-2 border-blue-500 outline-none"
+                    />
+                  ) : (
+                    <span
+                      className={`block text-task font-medium transition-all ${
+                        task.is_done
+                          ? 'w-full overflow-hidden text-ellipsis whitespace-nowrap line-through decoration-blue-500 decoration-4 text-text-tertiary'
+                          : 'w-full overflow-hidden text-ellipsis whitespace-nowrap'
+                      }`}
+                    >
+                      {task.content}
+                    </span>
+                  )}
+                </div>
+
+                <div className="shrink-0 flex items-center gap-2 transition-opacity opacity-0 group-hover:opacity-100">
+                  <button
+                    onClick={(event) => startEditing(task.id, event)}
+                    className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-text-tertiary hover:bg-white/5 hover:text-text-accent"
+                  >
+                    <ListChecks size={20} />
+                  </button>
+
+                  <button
+                    onClick={openDeleteConfirm}
+                    className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-text-tertiary hover:bg-white/5 hover:text-red-400"
+                    aria-label="Delete task"
+                  >
+                    <Trash2 size={20} />
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </motion.div>
       )}
