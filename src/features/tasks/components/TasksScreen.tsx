@@ -5,12 +5,15 @@ import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core';
 import { DndContext, MouseSensor, TouchSensor, closestCenter, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { ChevronDown, GripVertical, Trash2 } from 'lucide-react';
+import { GripVertical, Trash2 } from 'lucide-react';
 import { OppMark } from '@/components/OppMark';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import Input from '@/components/ui/Input';
 import SectionHeader from '@/components/ui/SectionHeader';
+import ArchiveLogsPanel from './ArchiveLogsPanel';
+import ScheduleRail from './ScheduleRail';
+import StatsCards from './StatsCards';
 
 import { createTaskAction, deleteTaskAction, reorderTaskPositionsAction } from '../actions';
 import { useTasksFeature } from '../useTasksFeature';
@@ -27,14 +30,6 @@ type Task = {
   scheduledFor?: Date;
   section?: string;
 };
-
-const hours = Array.from({ length: 17 }, (_, i) => i + 6);
-
-function formatHour(hour: number) {
-  const ampm = hour >= 12 ? 'PM' : 'AM';
-  const hr = ((hour + 11) % 12) + 1;
-  return `${hr}${ampm}`;
-}
 
 function getTodayLabel() {
   const now = new Date();
@@ -184,13 +179,6 @@ function extractTargetDate(content: string, now = new Date()): Date | undefined 
   }
 
   return undefined;
-}
-
-function formatModifiedDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-  });
 }
 
 type SortableTaskCardProps = {
@@ -447,6 +435,27 @@ export default function TasksScreen() {
   const timed = scheduledTasks
     .slice()
     .sort((a, b) => (a.time! > b.time! ? 1 : -1));
+  const scheduleDotPriorityByHour = React.useMemo(() => {
+    const byHour: Record<number, Priority | undefined> = {};
+    for (const task of timed) {
+      if (!task.time || !task.taggedPriority) continue;
+      const hour = Number(task.time.split(':')[0]);
+      const current = byHour[hour];
+      if (current === 'high') continue;
+      if (task.taggedPriority === 'high') {
+        byHour[hour] = 'high';
+        continue;
+      }
+      if (task.taggedPriority === 'normal') {
+        byHour[hour] = current === 'low' ? 'normal' : current ?? 'normal';
+        continue;
+      }
+      if (task.taggedPriority === 'low' && !current) {
+        byHour[hour] = 'low';
+      }
+    }
+    return byHour;
+  }, [timed]);
 
   const groups: { label: string; items: Task[] }[] = [
     { label: 'HIGH PRIORITY', items: orderedTasks.filter((task) => task.priority === 'high') },
@@ -624,42 +633,15 @@ export default function TasksScreen() {
                 </div>
               </div>
 
-              <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                <Card>
-                  <SectionHeader>COMPLETION</SectionHeader>
-                  <div className="mt-1 flex items-baseline justify-between">
-                    <div className="text-[2.25rem] font-bold tracking-tight text-text-primary">{pct}%</div>
-                    <div className="text-meta font-mono tracking-wide text-text-secondary">
-                      {done}/{total}
-                    </div>
-                  </div>
-                  <div className="mt-2 h-2 w-full rounded-[999px] bg-white/8">
-                    <div className="h-2 rounded-full bg-blue-500/80" style={{ width: `${pct}%` }} />
-                  </div>
-                </Card>
-
-                <Card>
-                  <SectionHeader>WEIGHTED</SectionHeader>
-                  <div className="mt-1 flex items-baseline justify-between">
-                    <div className="text-[2.25rem] font-bold tracking-tight text-text-primary">{weightedPct}%</div>
-                    <div className="text-meta font-mono tracking-wide text-text-secondary">
-                      {pointsDone}/{pointsTotal}
-                    </div>
-                  </div>
-                  <div className="mt-2 h-2 w-full rounded-[999px] bg-white/8">
-                    <div className="h-2 rounded-full bg-blue-500/80" style={{ width: `${weightedPct}%` }} />
-                  </div>
-                </Card>
-
-                <Card>
-                  <SectionHeader>SCHEDULED</SectionHeader>
-                  <div className="mt-1 flex items-baseline justify-between">
-                    <div className="text-[2.25rem] font-bold tracking-tight text-text-primary">{scheduled}</div>
-                    <div className="text-meta font-mono tracking-wide text-text-secondary">items</div>
-                  </div>
-                  <div className="mt-2 text-meta font-mono tracking-wide text-text-secondary">Only tasks with a time appear on the rail.</div>
-                </Card>
-              </div>
+              <StatsCards
+                pct={pct}
+                done={done}
+                total={total}
+                weightedPct={weightedPct}
+                pointsDone={pointsDone}
+                pointsTotal={pointsTotal}
+                scheduled={scheduled}
+              />
             </div>
 
             <div className="mt-2 flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-center lg:w-[260px] lg:justify-end">
@@ -701,57 +683,13 @@ export default function TasksScreen() {
         </header>
 
         <div className="grid gap-5 md:grid-cols-[208px_1fr]">
-          <Card className="order-2 rounded-3xl md:order-1">
-            <div className="mb-3 flex items-center justify-between">
-              <SectionHeader>SCHEDULE</SectionHeader>
-              <button
-                type="button"
-                onClick={() => setIsScheduleOpen((value) => !value)}
-                className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-label font-sans uppercase tracking-widest font-semibold text-text-secondary md:hidden"
-              >
-                {isScheduleOpen ? 'Hide' : `Show (${scheduled})`}
-              </button>
-            </div>
-
-            <div className={['space-y-2', isScheduleOpen ? 'block' : 'hidden md:block'].join(' ')}>
-              {hours.map((hour) => {
-                const label = formatHour(hour);
-                const isCurrentHour = hour === currentHour;
-                const slotTasks = timed.filter((task) => Number(task.time!.split(':')[0]) === hour);
-                const slotTaggedPriority =
-                  slotTasks.find((task) => task.taggedPriority === 'high')?.taggedPriority ??
-                  slotTasks.find((task) => task.taggedPriority === 'normal')?.taggedPriority ??
-                  slotTasks.find((task) => task.taggedPriority === 'low')?.taggedPriority;
-                const dotClass =
-                  slotTaggedPriority === 'high'
-                    ? 'bg-[color:var(--priority-high)]'
-                    : slotTaggedPriority === 'normal'
-                      ? 'bg-[color:var(--priority-normal)]'
-                      : slotTaggedPriority === 'low'
-                        ? 'bg-[color:var(--priority-low)]'
-                        : '';
-
-                return (
-                  <div key={hour} className="flex items-start gap-3">
-                    <div className="w-11 shrink-0 pt-1 text-label font-mono tracking-wide text-text-tertiary">{label}</div>
-
-                    <div
-                      className={[
-                        'min-h-[22px] flex-1 border-l pl-3',
-                        isCurrentHour ? 'border-[color:var(--state-active)]/85' : 'border-white/20',
-                      ].join(' ')}
-                    >
-                      <div className="flex h-5 items-center">
-                        {slotTaggedPriority ? (
-                          <span className={['h-1.5 w-1.5 rounded-full', dotClass].join(' ')} />
-                        ) : null}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </Card>
+          <ScheduleRail
+            currentHour={currentHour}
+            scheduledCount={scheduled}
+            isOpen={isScheduleOpen}
+            onToggleOpen={() => setIsScheduleOpen((value) => !value)}
+            dotPriorityByHour={scheduleDotPriorityByHour}
+          />
 
           <Card className="order-1 rounded-3xl md:order-2">
             <div className="mb-4">
@@ -872,64 +810,14 @@ export default function TasksScreen() {
           </Card>
         </div>
 
-        <Card className="mt-4 rounded-3xl">
-          <div className="flex items-center justify-between">
-            <SectionHeader>ARCHIVED LOGS</SectionHeader>
-            <button
-              type="button"
-              onClick={() => setIsArchivedLogsOpen((value) => !value)}
-              aria-expanded={isArchivedLogsOpen}
-              className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-label font-sans uppercase tracking-widest font-semibold text-text-secondary hover:text-text-primary"
-            >
-              <span>{isArchivedLogsOpen ? 'Hide' : `Show (${lists.length})`}</span>
-              <ChevronDown
-                size={14}
-                className={['transition-transform duration-200', isArchivedLogsOpen ? 'rotate-180' : 'rotate-0'].join(' ')}
-              />
-            </button>
-          </div>
-
-          {isArchivedLogsOpen ? (
-            <>
-              <Card tone="dark" className="mt-2 flex items-center gap-3">
-                <Input placeholder="Search history..." className="flex-1" />
-              </Card>
-
-              <div className="mt-4 space-y-2 text-meta font-mono tracking-wide text-text-secondary">
-                {lists.slice(0, 6).map((list) => (
-                  <button
-                    key={list.id}
-                    type="button"
-                    onClick={() => handleArchiveSelect(list.id)}
-                    className={[
-                      'block w-full rounded-xl border bg-black/30 p-4 text-left transition-colors',
-                      activeListId === list.id
-                        ? 'border-[color:var(--state-active)]/80 bg-blue-500/10 text-text-primary shadow-[inset_0_0_0_1px_rgba(96,165,250,0.25)]'
-                        : 'border-white/10 text-[color:var(--state-archived)] hover:bg-black/50',
-                    ].join(' ')}
-                  >
-                    <div className="truncate text-task font-medium text-text-primary">{list.title}</div>
-                    <div className="mt-2 text-meta font-mono tracking-wide text-text-secondary">
-                      {(() => {
-                        const stats = listStatsById[list.id];
-                        if (!stats) {
-                          return `${new Date(list.created_at).toLocaleDateString('en-US', {
-                            weekday: 'short',
-                            month: 'short',
-                            day: 'numeric',
-                          })} | --% | -- tasks | updated ${formatModifiedDate(list.created_at)}`;
-                        }
-                        return `${stats.completionPct}% complete | ${stats.totalTasks} tasks | updated ${formatModifiedDate(stats.modifiedAt)}`;
-                      })()}
-                    </div>
-                  </button>
-                ))}
-                {lists.length === 0 ? <div>No archived sessions yet.</div> : null}
-                {lists.length > 6 ? <SectionHeader>Showing latest 6 sessions.</SectionHeader> : null}
-              </div>
-            </>
-          ) : null}
-        </Card>
+        <ArchiveLogsPanel
+          lists={lists}
+          activeListId={activeListId}
+          listStatsById={listStatsById}
+          isOpen={isArchivedLogsOpen}
+          onToggleOpen={() => setIsArchivedLogsOpen((value) => !value)}
+          onSelectList={handleArchiveSelect}
+        />
       </div>
     </div>
   );
