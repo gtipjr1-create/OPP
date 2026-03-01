@@ -1,0 +1,4 @@
+-- NOTE:
+-- This file exists to match the remote migration history.
+-- Migration version 20260226221500 was present on the hosted DB but missing locally.
+-- No-op placeholder to unblock supabase db push and keep histories consistent.
