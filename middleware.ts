@@ -9,17 +9,20 @@ export async function middleware(req: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        getAll: () => req.cookies.getAll(),
-        setAll: (cookies) => {
-          cookies.forEach(({ name, value, options }) => {
-            res.cookies.set(name, value, options);
-          });
+        get(name: string) {
+          return req.cookies.get(name)?.value;
+        },
+        set(name: string, value: string, options: any) {
+          res.cookies.set({ name, value, ...options });
+        },
+        remove(name: string, options: any) {
+          res.cookies.set({ name, value: '', ...options, maxAge: 0 });
         },
       },
     }
   );
 
-  // This refreshes the session cookie if needed
+  // refresh session + read user
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -34,14 +37,14 @@ export async function middleware(req: NextRequest) {
 
   if (isPublicAsset) return res;
 
-  // If not logged in, force to /login
+  // Not logged in -> go to /login
   if (!user && !isAuthRoute) {
     const url = req.nextUrl.clone();
     url.pathname = '/login';
     return NextResponse.redirect(url);
   }
 
-  // If logged in, block /login (prevents loop)
+  // Logged in -> keep them out of /login
   if (user && isAuthRoute) {
     const url = req.nextUrl.clone();
     url.pathname = '/';
