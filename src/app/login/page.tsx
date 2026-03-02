@@ -1,15 +1,64 @@
 'use client';
 
 import * as React from 'react';
+import { createClient } from '@supabase/supabase-js';
 import { OppMark } from '@/components/OppMark';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export default function LoginPage() {
   const [mode, setMode] = React.useState<'signin' | 'signup'>('signin');
 
-  function onSubmit(e: React.FormEvent) {
+  const [email, setEmail] = React.useState('');
+  const [password, setPassword] = React.useState('');
+
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+
+  async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    // Keep your existing auth logic here.
-    // If you already had handlers in this file, paste them back in and wire them to this form.
+    setError(null);
+
+    const cleanEmail = email.trim();
+
+    if (!cleanEmail || !password) {
+      setError('Please enter your email and password.');
+      return;
+    }
+
+    // Guard: common production failure if env vars are missing in Vercel
+    if (!supabaseUrl || !supabaseAnonKey) {
+      setError(
+        'Missing Supabase env vars. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in Vercel and locally.'
+      );
+      return;
+    }
+
+    setLoading(true);
+    try {
+      if (mode === 'signin') {
+        const { error } = await supabase.auth.signInWithPassword({
+          email: cleanEmail,
+          password,
+        });
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.auth.signUp({
+          email: cleanEmail,
+          password,
+        });
+        if (error) throw error;
+      }
+
+      // Redirect after success (adjust if your app routes differ)
+      window.location.assign('/');
+    } catch (err: any) {
+      setError(err?.message ?? 'Authentication failed.');
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -25,9 +74,9 @@ export default function LoginPage() {
         <section className="w-full rounded-2xl border border-white/10 bg-white/5 p-6 shadow-2xl backdrop-blur-xl">
           {/* Brand */}
           <div className="mb-6 flex flex-col items-center text-center">
- <div className="mb-3 grid h-12 w-12 place-items-center rounded-2xl border border-white/10 bg-white/10">
-  <OppMark size={28} />
-</div>
+            <div className="mb-3 grid h-12 w-12 place-items-center rounded-2xl border border-white/10 bg-white/10">
+              <OppMark size={28} />
+            </div>
 
             <h1 className="text-2xl font-semibold tracking-tight">OPP</h1>
             <p className="mt-1 text-sm text-white/60">Plan deliberately. Execute daily.</p>
@@ -69,6 +118,8 @@ export default function LoginPage() {
                 type="email"
                 placeholder="you@example.com"
                 autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 className="h-11 w-full rounded-xl border border-white/10 bg-black/40 px-3 text-sm text-white placeholder:text-white/30 outline-none transition focus:border-white/25 focus:bg-black/55"
               />
             </div>
@@ -79,15 +130,29 @@ export default function LoginPage() {
                 type="password"
                 placeholder="••••••••"
                 autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 className="h-11 w-full rounded-xl border border-white/10 bg-black/40 px-3 text-sm text-white placeholder:text-white/30 outline-none transition focus:border-white/25 focus:bg-black/55"
               />
             </div>
 
+            {error ? (
+              <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-200">
+                {error}
+              </div>
+            ) : null}
+
             <button
               type="submit"
-              className="mt-2 h-11 w-full rounded-xl bg-white text-sm font-medium text-black transition hover:bg-white/90 active:scale-[0.99]"
+              disabled={loading}
+              className={[
+                'mt-2 h-11 w-full rounded-xl text-sm font-medium transition active:scale-[0.99]',
+                loading
+                  ? 'bg-white/70 text-black cursor-not-allowed'
+                  : 'bg-white text-black hover:bg-white/90',
+              ].join(' ')}
             >
-              {mode === 'signin' ? 'Sign in' : 'Create account'}
+              {loading ? 'Working…' : mode === 'signin' ? 'Sign in' : 'Create account'}
             </button>
 
             {/* Secondary actions */}
