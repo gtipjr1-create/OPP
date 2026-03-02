@@ -34,6 +34,9 @@ type Task = {
   section?: string;
 };
 
+const SWIPE_THRESHOLD = 80;
+const SWIPE_REVEAL_OFFSET = 116;
+
 function getTodayLabel() {
   const now = new Date();
   const weekday = now.toLocaleDateString('en-US', { weekday: 'short' });
@@ -193,62 +196,6 @@ type SortableTaskCardProps = {
   onSaveTask: (taskId: string, nextText: string) => Promise<void> | void;
 };
 
-type TaskRowActionsProps = {
-  canEdit: boolean;
-  isDeleting: boolean;
-  isSavingEdit: boolean;
-  onStartEdit: (event: React.MouseEvent) => void;
-  onOpenDeleteConfirm: (event: React.MouseEvent) => void;
-  setActivatorNodeRef: (element: HTMLElement | null) => void;
-  attributes: ReturnType<typeof useSortable>['attributes'];
-  listeners: ReturnType<typeof useSortable>['listeners'];
-};
-
-function TaskRowActions({
-  canEdit,
-  isDeleting,
-  isSavingEdit,
-  onStartEdit,
-  onOpenDeleteConfirm,
-  setActivatorNodeRef,
-  attributes,
-  listeners,
-}: TaskRowActionsProps) {
-  return (
-    <div className="flex shrink-0 items-center justify-end gap-1">
-      <button
-        type="button"
-        onClick={onStartEdit}
-        disabled={!canEdit || isDeleting || isSavingEdit}
-        className="min-h-[42px] min-w-[42px] rounded-lg border border-white/10 bg-white/5 px-2 text-label font-sans uppercase tracking-widest font-semibold text-text-secondary hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black disabled:cursor-not-allowed disabled:opacity-40 sm:min-h-[44px] sm:min-w-[44px]"
-        aria-label="Edit task"
-      >
-        Edit
-      </button>
-      <button
-        type="button"
-        onClick={onOpenDeleteConfirm}
-        disabled={!canEdit || isDeleting}
-        className="inline-flex min-h-[42px] min-w-[42px] items-center justify-center rounded-lg border border-white/10 bg-white/5 p-2 text-text-tertiary hover:bg-white/10 hover:text-red-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black disabled:cursor-not-allowed disabled:opacity-40 sm:min-h-[44px] sm:min-w-[44px]"
-        aria-label="Delete task"
-      >
-        <Trash2 size={14} />
-      </button>
-      <button
-        ref={setActivatorNodeRef}
-        type="button"
-        {...attributes}
-        {...listeners}
-        disabled={!canEdit}
-        aria-label="Drag to reorder task"
-        className="drag-handle inline-flex min-h-[42px] min-w-[42px] cursor-grab items-center justify-center rounded-lg border border-white/10 bg-white/5 p-2 text-text-secondary active:scale-95 active:cursor-grabbing touch-none select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black disabled:cursor-not-allowed disabled:opacity-40 sm:min-h-[44px] sm:min-w-[44px]"
-        style={{ touchAction: 'none' }}
-      >
-        <GripVertical size={14} />
-      </button>
-    </div>
-  );
-}
 
 function SortableTaskCard({
   task,
@@ -272,6 +219,9 @@ function SortableTaskCard({
   const [isSavingEdit, setIsSavingEdit] = React.useState(false);
   const [isEditing, setIsEditing] = React.useState(false);
   const [editValue, setEditValue] = React.useState(task.title);
+  const [touchStartX, setTouchStartX] = React.useState(0);
+  const [dragX, setDragX] = React.useState(0);
+  const cardRef = React.useRef<HTMLDivElement | null>(null);
 
   React.useEffect(() => {
     if (!isEditing) {
@@ -282,6 +232,7 @@ function SortableTaskCard({
   const openConfirmDelete = (event: React.MouseEvent) => {
     event.stopPropagation();
     if (!canEdit || isDeleting) return;
+    setDragX(0);
     setConfirmDelete(true);
   };
 
@@ -306,9 +257,57 @@ function SortableTaskCard({
   const startEdit = (event: React.MouseEvent) => {
     event.stopPropagation();
     if (!canEdit || isDeleting || isSavingEdit) return;
+    setDragX(0);
     setIsEditing(true);
     setEditValue(task.title);
   };
+
+  const handleTouchStart = (event: React.TouchEvent) => {
+    if (isEditing || confirmDelete) {
+      return;
+    }
+    setTouchStartX(event.touches[0].clientX);
+  };
+
+  const handleTouchMove = (event: React.TouchEvent) => {
+    if (isEditing || confirmDelete) {
+      return;
+    }
+    const diff = event.touches[0].clientX - touchStartX;
+    const nextDrag = Math.max(-SWIPE_REVEAL_OFFSET, Math.min(0, diff));
+    setDragX(nextDrag);
+  };
+
+  const handleTouchEnd = () => {
+    if (isEditing || confirmDelete) {
+      return;
+    }
+    if (dragX < -SWIPE_THRESHOLD) {
+      setDragX(-SWIPE_REVEAL_OFFSET);
+      return;
+    }
+    setDragX(0);
+  };
+
+  React.useEffect(() => {
+    if (dragX === 0) {
+      return;
+    }
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!cardRef.current) {
+        return;
+      }
+      if (!cardRef.current.contains(event.target as Node)) {
+        setDragX(0);
+      }
+    };
+
+    window.addEventListener('pointerdown', handlePointerDown);
+    return () => {
+      window.removeEventListener('pointerdown', handlePointerDown);
+    };
+  }, [dragX]);
 
   const saveEdit = async () => {
     const next = editValue.trim();
@@ -374,90 +373,138 @@ function SortableTaskCard({
       style={style}
       data-task-id={task.id}
       className={[
-        'draggable-row relative box-border grid w-full max-w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 overflow-hidden rounded-2xl border border-white/10 bg-black/30 px-3 py-2.5 sm:px-4 sm:py-3',
+        'draggable-row relative box-border w-full max-w-full overflow-hidden rounded-2xl border border-white/10 bg-black/30',
         isDragging || isActiveDrag ? 'opacity-60' : '',
         task.done ? 'opacity-80' : '',
+        task.priority === 'high' ? 'border-l-2 border-l-red-500/60' : '',
       ].join(' ')}
     >
-      <label className="flex min-h-[48px] min-w-[48px] items-center justify-center p-1">
-        <input
-          type="checkbox"
-          checked={task.done}
-          onChange={() => onToggleTask(task.id, task.done)}
-          aria-label={task.done ? `Mark ${task.title} as incomplete` : `Mark ${task.title} as complete`}
-          className="h-6 w-6 accent-blue-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-          disabled={!canEdit}
-        />
-      </label>
-
-      {isEditing ? (
-        <div className="min-w-0 basis-0 flex-1 overflow-hidden rounded-md">
-          <input
-            value={editValue}
-            disabled={!canEdit || isSavingEdit}
-            onChange={(event) => setEditValue(event.target.value)}
-            onBlur={() => {
-              void saveEdit();
-            }}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter') {
-                void saveEdit();
-              }
-              if (event.key === 'Escape') {
-                setIsEditing(false);
-                setEditValue(task.title);
-              }
-            }}
-            className="min-h-[44px] w-full bg-transparent text-task font-medium text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-            autoFocus
-          />
-          <div className="text-meta font-mono tracking-wide text-text-secondary">
-            {isSavingEdit ? 'Saving...' : 'Press Enter to save'}
-          </div>
-        </div>
-      ) : (
+      <div className="absolute inset-y-0 right-0 z-0 flex items-center gap-2 pr-3">
         <button
           type="button"
-          className="min-w-0 basis-0 flex-1 overflow-hidden rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-          aria-label="Task details"
+          onClick={startEdit}
+          disabled={!canEdit || isDeleting || isSavingEdit}
+          className="min-h-[36px] rounded-lg border border-white/10 bg-white/5 px-2 text-label font-sans uppercase tracking-widest font-semibold text-text-secondary hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
         >
-          <div
-            className={[
-              'block',
-              'whitespace-normal break-words',
-              task.done ? 'line-through text-text-tertiary' : '',
-            ].join(' ')}
-          >
-            {task.title}
-          </div>
-          <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-meta font-mono tracking-wide text-text-secondary">
-            <span>{task.time ? `@ ${formatDisplayTime(task.time)}` : '-'}</span>
-            <span className="text-text-tertiary">|</span>
-            <span
-              className={
-                task.priority === 'high'
-                  ? 'text-[color:var(--priority-high)]'
-                  : task.priority === 'normal'
-                    ? 'text-[color:var(--priority-normal)]'
-                    : 'text-[color:var(--priority-low)]'
-              }
-            >
-              {task.priority.toUpperCase()}
-            </span>
-          </div>
+          Edit
         </button>
-      )}
+        <button
+          type="button"
+          onClick={openConfirmDelete}
+          disabled={!canEdit || isDeleting}
+          className="inline-flex min-h-[36px] min-w-[36px] items-center justify-center rounded-lg bg-red-500/20 p-2 text-red-200 hover:bg-red-500/30 disabled:cursor-not-allowed disabled:opacity-40"
+          aria-label="Delete task"
+        >
+          <Trash2 size={14} />
+        </button>
+      </div>
 
-      <TaskRowActions
-        canEdit={canEdit}
-        isDeleting={isDeleting}
-        isSavingEdit={isSavingEdit}
-        onStartEdit={startEdit}
-        onOpenDeleteConfirm={openConfirmDelete}
-        setActivatorNodeRef={setActivatorNodeRef}
-        attributes={attributes}
-        listeners={listeners}
-      />
+      <div
+        ref={cardRef}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        style={{
+          transform: `translateX(${dragX}px)`,
+          transition: dragX === 0 ? 'transform 0.2s ease' : 'none',
+          touchAction: 'pan-y',
+        }}
+        className="relative z-10 flex items-start gap-3 bg-black/30 px-3 py-2.5 sm:px-4 sm:py-3"
+        onClick={() => {
+          if (dragX !== 0) {
+            setDragX(0);
+            return;
+          }
+          if (!isEditing) {
+            onToggleTask(task.id, task.done);
+          }
+        }}
+      >
+        <label
+          className="flex min-h-[40px] min-w-[40px] items-center justify-center pt-0.5"
+          onClick={(event) => event.stopPropagation()}
+        >
+          <input
+            type="checkbox"
+            checked={task.done}
+            onChange={() => onToggleTask(task.id, task.done)}
+            aria-label={task.done ? `Mark ${task.title} as incomplete` : `Mark ${task.title} as complete`}
+            className="h-6 w-6 accent-blue-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+            disabled={!canEdit}
+          />
+        </label>
+
+        {isEditing ? (
+          <div className="min-w-0 flex-1 overflow-hidden rounded-md">
+            <input
+              value={editValue}
+              disabled={!canEdit || isSavingEdit}
+              onChange={(event) => setEditValue(event.target.value)}
+              onBlur={() => {
+                void saveEdit();
+              }}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  void saveEdit();
+                }
+                if (event.key === 'Escape') {
+                  setIsEditing(false);
+                  setEditValue(task.title);
+                }
+              }}
+              className="min-h-[44px] w-full bg-transparent text-task font-medium text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+              autoFocus
+            />
+            <div className="text-meta font-mono tracking-wide text-text-secondary">
+              {isSavingEdit ? 'Saving...' : 'Press Enter to save'}
+            </div>
+          </div>
+        ) : (
+          <div className="min-w-0 flex-1">
+            <div
+              className={[
+                'block truncate text-task font-medium',
+                task.done ? 'line-through decoration-blue-500 decoration-4 text-text-tertiary' : 'text-text-primary',
+              ].join(' ')}
+            >
+              {task.title}
+            </div>
+            <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-meta font-mono tracking-wide text-text-secondary">
+              <span>{task.time ? `@ ${formatDisplayTime(task.time)}` : '-'}</span>
+              <span className="text-text-tertiary">|</span>
+              <span
+                className={
+                  task.priority === 'high'
+                    ? 'text-[color:var(--priority-high)]'
+                    : task.priority === 'normal'
+                      ? 'text-[color:var(--priority-normal)]'
+                      : 'text-[color:var(--priority-low)]'
+                }
+              >
+                {task.priority.toUpperCase()}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {isEditing ? (
+          <div className="shrink-0">
+            <button
+              ref={setActivatorNodeRef}
+              type="button"
+              {...attributes}
+              {...listeners}
+              disabled={!canEdit}
+              aria-label="Drag to reorder task"
+              className="drag-handle inline-flex min-h-[36px] min-w-[36px] cursor-grab items-center justify-center rounded-lg border border-white/10 bg-white/5 p-2 text-text-secondary active:scale-95 active:cursor-grabbing touch-none select-none disabled:cursor-not-allowed disabled:opacity-40"
+              style={{ touchAction: 'none' }}
+              onClick={(event) => event.stopPropagation()}
+            >
+              <GripVertical size={14} />
+            </button>
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }
