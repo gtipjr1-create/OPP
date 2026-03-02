@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle2, Circle, ListChecks, Trash2 } from 'lucide-react';
+import { CheckCircle2, Circle, GripVertical, Trash2 } from 'lucide-react';
 
 import type { TaskRow } from '../types';
 
@@ -16,6 +16,24 @@ interface TaskItemProps {
 }
 
 const SWIPE_THRESHOLD = 70;
+
+function formatDisplayTime(timeText?: string | null): string {
+  if (!timeText) {
+    return '-';
+  }
+
+  const normalized = timeText.slice(0, 5);
+  const [hourText, minuteText] = normalized.split(':');
+  const hour = Number(hourText);
+  const minute = Number(minuteText);
+  if (Number.isNaN(hour) || Number.isNaN(minute)) {
+    return normalized;
+  }
+
+  const suffix = hour >= 12 ? 'PM' : 'AM';
+  const hour12 = ((hour + 11) % 12) + 1;
+  return `${hour12}:${minute.toString().padStart(2, '0')} ${suffix}`;
+}
 
 export default function TaskItem({
   task,
@@ -156,53 +174,82 @@ export default function TaskItem({
             } ${(task.priority ?? 'normal') === 'high' ? 'border-l-2 border-l-red-500/60' : ''}`}
             onClick={() => !isEditing && toggleTask(task.id, task.is_done)}
           >
-            <div className="flex min-w-0 items-center gap-2 p-6">
-              {task.is_done ? (
-                <CheckCircle2 size={40} className="text-text-accent shrink-0" />
-              ) : (
-                <Circle size={40} className="text-text-tertiary shrink-0" />
-              )}
-
-              <div className="min-w-0 flex-1 overflow-hidden">
-                {isEditing ? (
-                  <input
-                    defaultValue={task.content}
-                    autoFocus
-                    onBlur={(event) => saveEdit(task.id, event.currentTarget.value)}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter') {
-                        saveEdit(task.id, event.currentTarget.value);
-                      }
-                    }}
-                    onClick={(event) => event.stopPropagation()}
-                    className="min-w-0 w-full py-1 text-task font-medium text-text-primary bg-transparent border-b-2 border-blue-500 outline-none"
-                  />
+            <div className="flex flex-col gap-2 p-4 w-full">
+              <div className="flex items-start gap-3">
+                {task.is_done ? (
+                  <CheckCircle2 size={40} className="text-text-accent shrink-0" />
                 ) : (
-                  <span
-                    className={`block text-task font-medium ${
-                      task.is_done ? 'line-through decoration-blue-500 decoration-4 text-text-tertiary' : ''
-                    }`}
-                  >
-                    {task.content}
-                  </span>
+                  <Circle size={40} className="text-text-tertiary shrink-0" />
                 )}
+
+                <div className="min-w-0 flex-1">
+                  {isEditing ? (
+                    <input
+                      defaultValue={task.content}
+                      autoFocus
+                      onBlur={(event) => saveEdit(task.id, event.currentTarget.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter') {
+                          saveEdit(task.id, event.currentTarget.value);
+                        }
+                      }}
+                      onClick={(event) => event.stopPropagation()}
+                      className="min-w-0 w-full py-1 text-task font-medium text-text-primary bg-transparent border-b-2 border-blue-500 outline-none"
+                    />
+                  ) : (
+                    <span
+                      className={`block text-task font-medium ${
+                        task.is_done ? 'line-through decoration-blue-500 decoration-4 text-text-tertiary' : ''
+                      }`}
+                    >
+                      {task.content}
+                    </span>
+                  )}
+                </div>
               </div>
 
-              <div className="shrink-0 flex items-center gap-2 transition-opacity opacity-0 group-hover:opacity-100">
-                <button
-                  onClick={(event) => startEditing(task.id, event)}
-                  className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-text-tertiary hover:bg-white/5 hover:text-text-accent"
-                >
-                  <ListChecks size={20} />
-                </button>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-meta font-mono tracking-wide text-text-secondary">
+                  <span>{task.scheduled_time ? `@ ${formatDisplayTime(task.scheduled_time)}` : '-'}</span>
+                  <span className="text-text-tertiary">|</span>
+                  <span
+                    className={
+                      task.priority === 'high'
+                        ? 'text-[color:var(--priority-high)]'
+                        : task.priority === 'low'
+                          ? 'text-[color:var(--priority-low)]'
+                          : 'text-[color:var(--priority-normal)]'
+                    }
+                  >
+                    {(task.priority ?? 'normal').toUpperCase()}
+                  </span>
+                </div>
 
-                <button
-                  onClick={openDeleteConfirm}
-                  className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-text-tertiary hover:bg-white/5 hover:text-red-400"
-                  aria-label="Delete task"
-                >
-                  <Trash2 size={20} />
-                </button>
+                <div className="shrink-0 flex items-center gap-2 transition-opacity opacity-0 group-hover:opacity-100">
+                  <button
+                    onClick={(event) => startEditing(task.id, event)}
+                    className="min-h-[36px] rounded-lg border border-white/10 bg-white/5 px-2 text-label font-sans uppercase tracking-widest font-semibold text-text-secondary hover:bg-white/10 hover:text-text-accent"
+                  >
+                    Edit
+                  </button>
+
+                  <button
+                    onClick={openDeleteConfirm}
+                    className="min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg text-text-tertiary hover:bg-white/5 hover:text-red-400"
+                    aria-label="Delete task"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={(event) => event.stopPropagation()}
+                    className="min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg text-text-tertiary hover:bg-white/5"
+                    aria-label="Drag task"
+                  >
+                    <GripVertical size={18} />
+                  </button>
+                </div>
               </div>
             </div>
           </div>
