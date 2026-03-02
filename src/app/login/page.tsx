@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { createClient } from '@supabase/supabase-js';
+import createSupabaseBrowserClient()
 import { OppMark } from '@/components/OppMark';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
