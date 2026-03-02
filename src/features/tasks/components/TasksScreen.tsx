@@ -272,7 +272,6 @@ function SortableTaskCard({
   const [isSavingEdit, setIsSavingEdit] = React.useState(false);
   const [isEditing, setIsEditing] = React.useState(false);
   const [editValue, setEditValue] = React.useState(task.title);
-  const [isExpanded, setIsExpanded] = React.useState(false);
 
   React.useEffect(() => {
     if (!isEditing) {
@@ -308,7 +307,6 @@ function SortableTaskCard({
     event.stopPropagation();
     if (!canEdit || isDeleting || isSavingEdit) return;
     setIsEditing(true);
-    setIsExpanded(true);
     setEditValue(task.title);
   };
 
@@ -420,15 +418,13 @@ function SortableTaskCard({
       ) : (
         <button
           type="button"
-          onClick={() => setIsExpanded((value) => !value)}
           className="min-w-0 basis-0 flex-1 overflow-hidden rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-          aria-expanded={isExpanded}
-          aria-label={isExpanded ? 'Collapse task details' : 'Expand task details'}
+          aria-label="Task details"
         >
           <div
             className={[
               'block',
-              isExpanded ? 'whitespace-normal break-words' : 'truncate',
+              'whitespace-normal break-words',
               task.done ? 'line-through text-text-tertiary' : '',
             ].join(' ')}
           >
