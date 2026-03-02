@@ -373,7 +373,7 @@ function SortableTaskCard({
       style={style}
       data-task-id={task.id}
       className={[
-        'draggable-row relative box-border w-full max-w-full overflow-hidden rounded-2xl border border-white/10 bg-white/5',
+        'draggable-row relative w-full max-w-full overflow-hidden rounded-2xl border border-white/10 bg-white/5',
         isDragging || isActiveDrag ? 'opacity-60' : '',
         task.done ? 'opacity-80' : '',
         task.priority === 'high' ? 'border-l-2 border-l-red-500/60' : '',
@@ -409,7 +409,7 @@ function SortableTaskCard({
           transition: dragX === 0 ? 'transform 0.2s ease' : 'none',
           touchAction: 'pan-y',
         }}
-        className="relative z-10 flex items-start gap-3 px-3 py-2.5 transition-transform will-change-transform sm:px-4 sm:py-3"
+        className="relative z-10 w-full max-w-full transition-transform will-change-transform"
         onClick={() => {
           if (dragX !== 0) {
             setDragX(0);
@@ -420,90 +420,92 @@ function SortableTaskCard({
           }
         }}
       >
-        <label
-          className="flex min-h-[40px] min-w-[40px] items-center justify-center pt-0.5"
-          onClick={(event) => event.stopPropagation()}
-        >
-          <input
-            type="checkbox"
-            checked={task.done}
-            onChange={() => onToggleTask(task.id, task.done)}
-            aria-label={task.done ? `Mark ${task.title} as incomplete` : `Mark ${task.title} as complete`}
-            className="h-6 w-6 accent-blue-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-            disabled={!canEdit}
-          />
-        </label>
-
-        {isEditing ? (
-          <div className="min-w-0 flex-1 overflow-hidden rounded-md">
+        <div className="flex w-full items-center gap-3 px-3 py-2.5 sm:px-4 sm:py-3">
+          <label
+            className="flex min-h-[40px] min-w-[40px] items-center justify-center pt-0.5"
+            onClick={(event) => event.stopPropagation()}
+          >
             <input
-              value={editValue}
-              disabled={!canEdit || isSavingEdit}
-              onChange={(event) => setEditValue(event.target.value)}
-              onBlur={() => {
-                void saveEdit();
-              }}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter') {
-                  void saveEdit();
-                }
-                if (event.key === 'Escape') {
-                  setIsEditing(false);
-                  setEditValue(task.title);
-                }
-              }}
-              className="min-h-[44px] w-full bg-transparent text-task font-medium text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-              autoFocus
-            />
-            <div className="text-meta font-mono tracking-wide text-text-secondary">
-              {isSavingEdit ? 'Saving...' : 'Press Enter to save'}
-            </div>
-          </div>
-        ) : (
-          <div className="min-w-0 flex-1">
-            <div
-              className={[
-                'block truncate text-task font-medium',
-                task.done ? 'line-through decoration-blue-500 decoration-4 text-text-tertiary' : 'text-text-primary',
-              ].join(' ')}
-            >
-              {task.title}
-            </div>
-            <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-meta font-mono tracking-wide text-text-secondary">
-              <span>{task.time ? `@ ${formatDisplayTime(task.time)}` : '-'}</span>
-              <span className="text-text-tertiary">|</span>
-              <span
-                className={
-                  task.priority === 'high'
-                    ? 'text-[color:var(--priority-high)]'
-                    : task.priority === 'normal'
-                      ? 'text-[color:var(--priority-normal)]'
-                      : 'text-[color:var(--priority-low)]'
-                }
-              >
-                {task.priority.toUpperCase()}
-              </span>
-            </div>
-          </div>
-        )}
-
-        {isEditing ? (
-          <div className="shrink-0">
-            <button
-              ref={setActivatorNodeRef}
-              type="button"
-              {...attributes}
-              {...listeners}
+              type="checkbox"
+              checked={task.done}
+              onChange={() => onToggleTask(task.id, task.done)}
+              aria-label={task.done ? `Mark ${task.title} as incomplete` : `Mark ${task.title} as complete`}
+              className="h-6 w-6 accent-blue-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black"
               disabled={!canEdit}
-              aria-label="Drag to reorder task"
-              className="drag-handle inline-flex min-h-[36px] min-w-[36px] cursor-grab items-center justify-center rounded-lg border border-white/10 bg-white/5 p-2 text-text-secondary active:scale-95 active:cursor-grabbing touch-none select-none disabled:cursor-not-allowed disabled:opacity-40"
-              style={{ touchAction: 'none' }}
-              onClick={(event) => event.stopPropagation()}
-            >
-              <GripVertical size={14} />
-            </button>
-          </div>
-        ) : null}
+            />
+          </label>
+
+          {isEditing ? (
+            <div className="min-w-0 flex-1 overflow-hidden rounded-md">
+              <input
+                value={editValue}
+                disabled={!canEdit || isSavingEdit}
+                onChange={(event) => setEditValue(event.target.value)}
+                onBlur={() => {
+                  void saveEdit();
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') {
+                    void saveEdit();
+                  }
+                  if (event.key === 'Escape') {
+                    setIsEditing(false);
+                    setEditValue(task.title);
+                  }
+                }}
+                className="min-h-[44px] w-full bg-transparent text-task font-medium text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+                autoFocus
+              />
+              <div className="text-meta font-mono tracking-wide text-text-secondary">
+                {isSavingEdit ? 'Saving...' : 'Press Enter to save'}
+              </div>
+            </div>
+          ) : (
+            <div className="min-w-0 flex-1">
+              <div
+                className={[
+                  'block truncate text-task font-medium',
+                  task.done ? 'line-through decoration-blue-500 decoration-4 text-text-tertiary' : 'text-text-primary',
+                ].join(' ')}
+              >
+                {task.title}
+              </div>
+              <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-meta font-mono tracking-wide text-text-secondary">
+                <span>{task.time ? `@ ${formatDisplayTime(task.time)}` : '-'}</span>
+                <span className="text-text-tertiary">|</span>
+                <span
+                  className={
+                    task.priority === 'high'
+                      ? 'text-[color:var(--priority-high)]'
+                      : task.priority === 'normal'
+                        ? 'text-[color:var(--priority-normal)]'
+                        : 'text-[color:var(--priority-low)]'
+                  }
+                >
+                  {task.priority.toUpperCase()}
+                </span>
+              </div>
+            </div>
+          )}
+
+          {isEditing ? (
+            <div className="shrink-0">
+              <button
+                ref={setActivatorNodeRef}
+                type="button"
+                {...attributes}
+                {...listeners}
+                disabled={!canEdit}
+                aria-label="Drag to reorder task"
+                className="drag-handle inline-flex min-h-[36px] min-w-[36px] cursor-grab items-center justify-center rounded-lg border border-white/10 bg-white/5 p-2 text-text-secondary active:scale-95 active:cursor-grabbing touch-none select-none disabled:cursor-not-allowed disabled:opacity-40"
+                style={{ touchAction: 'none' }}
+                onClick={(event) => event.stopPropagation()}
+              >
+                <GripVertical size={14} />
+              </button>
+            </div>
+          ) : null}
+        </div>
       </div>
     </div>
   );
