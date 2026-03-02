@@ -213,7 +213,7 @@ function SortableTaskCard({
     transition,
   };
 
-  // ✅ Confirm delete (tap trash → confirm)
+  // ? Confirm delete (tap trash ? confirm)
   const [confirmDelete, setConfirmDelete] = React.useState(false);
   const [isDeleting, setIsDeleting] = React.useState(false);
   const [isSavingEdit, setIsSavingEdit] = React.useState(false);
@@ -409,7 +409,7 @@ function SortableTaskCard({
           transition: dragX === 0 ? 'transform 0.2s ease' : 'none',
           touchAction: 'pan-y',
         }}
-        className="relative z-10 w-full max-w-full transition-transform will-change-transform"
+        className="relative z-10 w-full max-w-full transition-transform will-change-transform touch-pan-y"
         onClick={() => {
           if (dragX !== 0) {
             setDragX(0);
