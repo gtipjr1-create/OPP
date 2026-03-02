@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle2, Circle, GripVertical, Trash2 } from 'lucide-react';
 
@@ -15,7 +15,8 @@ interface TaskItemProps {
   isEditing: boolean;
 }
 
-const SWIPE_THRESHOLD = 70;
+const SWIPE_THRESHOLD = 80;
+const SWIPE_REVEAL_OFFSET = 116;
 
 function formatDisplayTime(timeText?: string | null): string {
   if (!timeText) {
@@ -43,6 +44,7 @@ export default function TaskItem({
   saveEdit,
   isEditing,
 }: TaskItemProps) {
+  const cardRef = useRef<HTMLDivElement | null>(null);
   const [touchStartX, setTouchStartX] = useState(0);
   const [dragX, setDragX] = useState(0);
   const [isExiting, setIsExiting] = useState(false);
@@ -58,15 +60,13 @@ export default function TaskItem({
     }
 
     const diff = event.touches[0].clientX - touchStartX;
-    if (diff < 0) {
-      setDragX(diff);
-    }
+    const nextDrag = Math.max(-SWIPE_REVEAL_OFFSET, Math.min(0, diff));
+    setDragX(nextDrag);
   };
 
   const handleTouchEnd = () => {
     if (dragX < -SWIPE_THRESHOLD) {
-      setConfirmDelete(true);
-      setDragX(-SWIPE_THRESHOLD); // keep it revealed
+      setDragX(-SWIPE_REVEAL_OFFSET);
       return;
     }
 
@@ -90,7 +90,25 @@ export default function TaskItem({
     setIsExiting(true); // triggers exit animation; delete runs on animation complete
   };
 
-  const revealOpacity = Math.min(Math.abs(dragX) / SWIPE_THRESHOLD, 1);
+  useEffect(() => {
+    if (dragX === 0) {
+      return;
+    }
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!cardRef.current) {
+        return;
+      }
+      if (!cardRef.current.contains(event.target as Node)) {
+        setDragX(0);
+      }
+    };
+
+    window.addEventListener('pointerdown', handlePointerDown);
+    return () => {
+      window.removeEventListener('pointerdown', handlePointerDown);
+    };
+  }, [dragX]);
 
   if (confirmDelete) {
     return (
@@ -140,6 +158,7 @@ export default function TaskItem({
     <AnimatePresence>
       {!isExiting && (
         <motion.div
+          ref={cardRef}
           layout
           initial={{ opacity: 1, height: 'auto' }}
           exit={{ x: '-110%', opacity: 0, height: 0, marginBottom: 0 }}
@@ -151,11 +170,20 @@ export default function TaskItem({
           }}
           className="relative mb-4 overflow-hidden rounded-2xl group"
         >
-          <div
-            className="absolute inset-0 flex items-center justify-end pr-6 bg-red-600 rounded-2xl"
-            style={{ opacity: revealOpacity }}
-          >
-            <Trash2 className="text-text-primary" size={24} />
+          <div className="absolute inset-y-0 right-0 z-0 flex items-center gap-2 pr-3">
+            <button
+              onClick={(event) => startEditing(task.id, event)}
+              className="min-h-[36px] rounded-lg border border-white/10 bg-white/5 px-2 text-label font-sans uppercase tracking-widest font-semibold text-text-secondary hover:bg-white/10 hover:text-text-accent"
+            >
+              Edit
+            </button>
+            <button
+              onClick={openDeleteConfirm}
+              className="min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg bg-red-500/20 text-red-200 hover:bg-red-500/30"
+              aria-label="Delete task"
+            >
+              <Trash2 size={18} />
+            </button>
           </div>
 
           <div
@@ -172,44 +200,48 @@ export default function TaskItem({
                 ? 'bg-zinc-950 border-zinc-900 opacity-40'
                 : 'bg-zinc-900 border-zinc-800 hover:border-blue-500'
             } ${(task.priority ?? 'normal') === 'high' ? 'border-l-2 border-l-red-500/60' : ''}`}
-            onClick={() => !isEditing && toggleTask(task.id, task.is_done)}
+            onClick={() => {
+              if (dragX !== 0) {
+                setDragX(0);
+                return;
+              }
+              if (!isEditing) {
+                toggleTask(task.id, task.is_done);
+              }
+            }}
           >
-            <div className="flex flex-col gap-2 p-4 w-full">
-              <div className="flex items-start gap-3">
-                {task.is_done ? (
-                  <CheckCircle2 size={40} className="text-text-accent shrink-0" />
+            <div className="flex w-full items-start gap-3 p-4">
+              {task.is_done ? (
+                <CheckCircle2 size={40} className="shrink-0 text-text-accent" />
+              ) : (
+                <Circle size={40} className="shrink-0 text-text-tertiary" />
+              )}
+
+              <div className="min-w-0 flex-1">
+                {isEditing ? (
+                  <input
+                    defaultValue={task.content}
+                    autoFocus
+                    onBlur={(event) => saveEdit(task.id, event.currentTarget.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter') {
+                        saveEdit(task.id, event.currentTarget.value);
+                      }
+                    }}
+                    onClick={(event) => event.stopPropagation()}
+                    className="min-w-0 w-full border-b-2 border-blue-500 bg-transparent py-1 text-task font-medium text-text-primary outline-none"
+                  />
                 ) : (
-                  <Circle size={40} className="text-text-tertiary shrink-0" />
+                  <span
+                    className={`block truncate text-task font-medium ${
+                      task.is_done ? 'line-through decoration-blue-500 decoration-4 text-text-tertiary' : ''
+                    }`}
+                  >
+                    {task.content}
+                  </span>
                 )}
 
-                <div className="min-w-0 flex-1">
-                  {isEditing ? (
-                    <input
-                      defaultValue={task.content}
-                      autoFocus
-                      onBlur={(event) => saveEdit(task.id, event.currentTarget.value)}
-                      onKeyDown={(event) => {
-                        if (event.key === 'Enter') {
-                          saveEdit(task.id, event.currentTarget.value);
-                        }
-                      }}
-                      onClick={(event) => event.stopPropagation()}
-                      className="min-w-0 w-full py-1 text-task font-medium text-text-primary bg-transparent border-b-2 border-blue-500 outline-none"
-                    />
-                  ) : (
-                    <span
-                      className={`block text-task font-medium ${
-                        task.is_done ? 'line-through decoration-blue-500 decoration-4 text-text-tertiary' : ''
-                      }`}
-                    >
-                      {task.content}
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-meta font-mono tracking-wide text-text-secondary">
+                <div className="mt-1 flex items-center gap-2 text-meta font-mono tracking-wide text-text-secondary">
                   <span>{task.scheduled_time ? `@ ${formatDisplayTime(task.scheduled_time)}` : '-'}</span>
                   <span className="text-text-tertiary">|</span>
                   <span
@@ -224,23 +256,10 @@ export default function TaskItem({
                     {(task.priority ?? 'normal').toUpperCase()}
                   </span>
                 </div>
+              </div>
 
+              {isEditing ? (
                 <div className="shrink-0 flex items-center gap-2">
-                  <button
-                    onClick={(event) => startEditing(task.id, event)}
-                    className="min-h-[36px] rounded-lg border border-white/10 bg-white/5 px-2 text-label font-sans uppercase tracking-widest font-semibold text-text-secondary hover:bg-white/10 hover:text-text-accent"
-                  >
-                    Edit
-                  </button>
-
-                  <button
-                    onClick={openDeleteConfirm}
-                    className="min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg text-text-tertiary hover:bg-white/5 hover:text-red-400"
-                    aria-label="Delete task"
-                  >
-                    <Trash2 size={18} />
-                  </button>
-
                   <button
                     type="button"
                     onClick={(event) => event.stopPropagation()}
@@ -250,7 +269,7 @@ export default function TaskItem({
                     <GripVertical size={18} />
                   </button>
                 </div>
-              </div>
+              ) : null}
             </div>
           </div>
         </motion.div>
