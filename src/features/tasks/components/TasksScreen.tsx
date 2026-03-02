@@ -379,12 +379,18 @@ function SortableTaskCard({
         task.priority === 'high' ? 'border-l-2 border-l-red-500/60' : '',
       ].join(' ')}
     >
-      <div className="absolute inset-y-0 right-0 z-0 w-[120px] flex items-center justify-end gap-2 pr-3">
+      <div
+        className={[
+          'pointer-events-none absolute inset-0 z-0 flex items-center justify-end pr-3 transition-opacity',
+          dragX < -8 ? 'opacity-100' : 'opacity-0',
+        ].join(' ')}
+      >
+        <div className="flex w-[120px] items-center justify-end gap-2">
         <button
           type="button"
           onClick={startEdit}
           disabled={!canEdit || isDeleting || isSavingEdit}
-          className="min-h-[36px] rounded-lg border border-white/10 bg-white/5 px-2 text-label font-sans uppercase tracking-widest font-semibold text-text-secondary hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
+          className="pointer-events-auto min-h-[36px] rounded-lg border border-white/10 bg-white/5 px-2 text-label font-sans uppercase tracking-widest font-semibold text-text-secondary hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
         >
           Edit
         </button>
@@ -392,11 +398,12 @@ function SortableTaskCard({
           type="button"
           onClick={openConfirmDelete}
           disabled={!canEdit || isDeleting}
-          className="inline-flex min-h-[36px] min-w-[36px] items-center justify-center rounded-lg bg-red-500/20 p-2 text-red-200 hover:bg-red-500/30 disabled:cursor-not-allowed disabled:opacity-40"
+          className="pointer-events-auto inline-flex min-h-[36px] min-w-[36px] items-center justify-center rounded-lg bg-red-500/20 p-2 text-red-200 hover:bg-red-500/30 disabled:cursor-not-allowed disabled:opacity-40"
           aria-label="Delete task"
         >
           <Trash2 size={14} />
         </button>
+        </div>
       </div>
 
       <div
@@ -409,7 +416,7 @@ function SortableTaskCard({
           transition: dragX === 0 ? 'transform 0.2s ease' : 'none',
           touchAction: 'pan-y',
         }}
-        className="relative z-10 w-full max-w-full transition-transform will-change-transform touch-pan-y"
+        className="relative z-10 w-full max-w-full rounded-2xl bg-white/5 transition-transform will-change-transform touch-pan-y"
         onClick={() => {
           if (dragX !== 0) {
             setDragX(0);
