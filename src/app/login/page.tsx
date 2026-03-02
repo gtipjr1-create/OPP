@@ -1,19 +1,17 @@
 'use client';
 
 import * as React from 'react';
-import createSupabaseBrowserClient()
+import { useRouter } from 'next/navigation';
 import { OppMark } from '@/components/OppMark';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+import { createSupabaseBrowserClient } from '@/lib/supabase/browser';
 
 export default function LoginPage() {
-  const [mode, setMode] = React.useState<'signin' | 'signup'>('signin');
+  const router = useRouter();
+  const supabase = React.useMemo(() => createSupabaseBrowserClient(), []);
 
+  const [mode, setMode] = React.useState<'signin' | 'signup'>('signin');
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
-
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -22,17 +20,8 @@ export default function LoginPage() {
     setError(null);
 
     const cleanEmail = email.trim();
-
     if (!cleanEmail || !password) {
       setError('Please enter your email and password.');
-      return;
-    }
-
-    // Guard: common production failure if env vars are missing in Vercel
-    if (!supabaseUrl || !supabaseAnonKey) {
-      setError(
-        'Missing Supabase env vars. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in Vercel and locally.'
-      );
       return;
     }
 
@@ -52,8 +41,8 @@ export default function LoginPage() {
         if (error) throw error;
       }
 
-      // Redirect after success (adjust if your app routes differ)
-      window.location.assign('/');
+      router.replace('/');
+      router.refresh();
     } catch (err: any) {
       setError(err?.message ?? 'Authentication failed.');
     } finally {
@@ -63,7 +52,6 @@ export default function LoginPage() {
 
   return (
     <main className="min-h-screen w-full bg-black text-white relative overflow-hidden">
-      {/* Premium backdrop */}
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute -top-48 left-1/2 h-[620px] w-[620px] -translate-x-1/2 rounded-full bg-white/10 blur-3xl" />
         <div className="absolute bottom-[-260px] right-[-220px] h-[620px] w-[620px] rounded-full bg-white/5 blur-3xl" />
@@ -72,7 +60,6 @@ export default function LoginPage() {
 
       <div className="relative mx-auto flex min-h-screen max-w-md items-center justify-center px-5">
         <section className="w-full rounded-2xl border border-white/10 bg-white/5 p-6 shadow-2xl backdrop-blur-xl">
-          {/* Brand */}
           <div className="mb-6 flex flex-col items-center text-center">
             <div className="mb-3 grid h-12 w-12 place-items-center rounded-2xl border border-white/10 bg-white/10">
               <OppMark size={28} />
@@ -82,7 +69,6 @@ export default function LoginPage() {
             <p className="mt-1 text-sm text-white/60">Plan deliberately. Execute daily.</p>
           </div>
 
-          {/* Tabs */}
           <div className="mb-5 grid grid-cols-2 rounded-xl border border-white/10 bg-black/20 p-1">
             <button
               type="button"
@@ -110,7 +96,6 @@ export default function LoginPage() {
             </button>
           </div>
 
-          {/* Form */}
           <form onSubmit={onSubmit} className="space-y-3">
             <div className="space-y-2">
               <label className="text-xs text-white/70">Email</label>
@@ -155,7 +140,6 @@ export default function LoginPage() {
               {loading ? 'Working…' : mode === 'signin' ? 'Sign in' : 'Create account'}
             </button>
 
-            {/* Secondary actions */}
             <div className="flex items-center justify-between pt-1">
               <button type="button" className="text-xs text-white/55 hover:text-white/80">
                 Forgot password?
