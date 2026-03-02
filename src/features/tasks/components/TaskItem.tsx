@@ -179,10 +179,8 @@ export default function TaskItem({
                   />
                 ) : (
                   <span
-                    className={`block text-task font-medium transition-all ${
-                      task.is_done
-                        ? 'line-through decoration-blue-500 decoration-4 text-text-tertiary line-clamp-2'
-                        : 'line-clamp-2'
+                    className={`block text-task font-medium ${
+                      task.is_done ? 'line-through decoration-blue-500 decoration-4 text-text-tertiary' : ''
                     }`}
                   >
                     {task.content}
