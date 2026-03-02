@@ -153,14 +153,14 @@ export default function TaskItem({
               task.is_done
                 ? 'bg-zinc-950 border-zinc-900 opacity-40'
                 : 'bg-zinc-900 border-zinc-800 hover:border-blue-500'
-            }`}
+            } ${(task.priority ?? 'normal') === 'high' ? 'border-l-2 border-l-red-500/60' : ''}`}
             onClick={() => !isEditing && toggleTask(task.id, task.is_done)}
           >
             <div className="flex min-w-0 items-center gap-2 p-6">
               {task.is_done ? (
-                <CheckCircle2 size={32} className="text-text-accent shrink-0" />
+                <CheckCircle2 size={40} className="text-text-accent shrink-0" />
               ) : (
-                <Circle size={32} className="text-text-tertiary shrink-0" />
+                <Circle size={40} className="text-text-tertiary shrink-0" />
               )}
 
               <div className="min-w-0 flex-1 overflow-hidden">
@@ -181,8 +181,8 @@ export default function TaskItem({
                   <span
                     className={`block text-task font-medium transition-all ${
                       task.is_done
-                        ? 'w-full overflow-hidden text-ellipsis whitespace-nowrap line-through decoration-blue-500 decoration-4 text-text-tertiary'
-                        : 'w-full overflow-hidden text-ellipsis whitespace-nowrap'
+                        ? 'line-through decoration-blue-500 decoration-4 text-text-tertiary line-clamp-2'
+                        : 'line-clamp-2'
                     }`}
                   >
                     {task.content}

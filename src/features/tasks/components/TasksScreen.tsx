@@ -448,12 +448,6 @@ function SortableTaskCard({
             >
               {task.priority.toUpperCase()}
             </span>
-            {task.done ? (
-              <>
-                <span className="text-text-tertiary">|</span>
-                <span className="text-[color:var(--state-completed)]">COMPLETED</span>
-              </>
-            ) : null}
           </div>
         </button>
       )}
@@ -549,13 +543,23 @@ export default function TasksScreen() {
   }, [orderedTaskIds]);
 
   const orderedTasks = React.useMemo(() => {
-    if (orderedTaskIds.length === 0) {
-      return tasks;
-    }
-
+    const priorityOrder: Record<Priority, number> = { high: 0, normal: 1, low: 2 };
     const position = new Map(orderedTaskIds.map((id, index) => [id, index]));
-    return [...tasks].sort((a, b) => (position.get(a.id) ?? 9999) - (position.get(b.id) ?? 9999));
+
+    const byPosition =
+      orderedTaskIds.length === 0
+        ? [...tasks]
+        : [...tasks].sort((a, b) => (position.get(a.id) ?? 9999) - (position.get(b.id) ?? 9999));
+
+    return byPosition.sort((a, b) => {
+      const priorityDiff = priorityOrder[a.priority] - priorityOrder[b.priority];
+      if (priorityDiff !== 0) {
+        return priorityDiff;
+      }
+      return (position.get(a.id) ?? 9999) - (position.get(b.id) ?? 9999);
+    });
   }, [orderedTaskIds, tasks]);
+  const orderedTaskIdList = React.useMemo(() => orderedTasks.map((task) => task.id), [orderedTasks]);
 
   const total = tasks.length;
   const done = tasks.filter((task) => task.done).length;
@@ -576,12 +580,6 @@ export default function TasksScreen() {
     .slice()
     .sort((a, b) => (a.time! > b.time! ? 1 : -1));
   const scheduleDotPriorityByHour = React.useMemo(() => selectScheduleDotPriorityByHour(timed), [timed]);
-
-  const groups: { label: string; items: Task[] }[] = [
-    { label: 'HIGH PRIORITY', items: orderedTasks.filter((task) => task.priority === 'high') },
-    { label: 'NORMAL', items: orderedTasks.filter((task) => task.priority === 'normal') },
-    { label: 'LOW', items: orderedTasks.filter((task) => task.priority === 'low') },
-  ].filter((group) => group.items.length > 0);
 
   const canEdit = !isLocked;
   const currentHour = new Date().getHours();
@@ -644,7 +642,7 @@ export default function TasksScreen() {
         return;
       }
 
-      const previous = orderedTaskIdsRef.current;
+      const previous = orderedTaskIdList;
       const oldIndex = previous.indexOf(activeId);
       const newIndex = previous.indexOf(overId);
       if (oldIndex === -1 || newIndex === -1) {
@@ -652,7 +650,6 @@ export default function TasksScreen() {
       }
 
       const reordered = arrayMove(previous, oldIndex, newIndex);
-      orderedTaskIdsRef.current = reordered;
       setOrderedTaskIds(reordered);
 
       if (!activeListId) {
@@ -662,7 +659,7 @@ export default function TasksScreen() {
 
       await persistTaskOrder(activeListId, reordered);
     },
-    [activeListId, persistTaskOrder],
+    [activeListId, orderedTaskIdList, persistTaskOrder],
   );
 
   const deleteTask = React.useCallback(
@@ -949,36 +946,28 @@ export default function TasksScreen() {
                 void handleDragEnd(event);
               }}
             >
-              <SortableContext items={orderedTaskIds} strategy={verticalListSortingStrategy}>
+              <SortableContext items={orderedTaskIdList} strategy={verticalListSortingStrategy}>
                 <div className="space-y-2">
-                  {groups.length === 0 ? (
+                  {orderedTasks.length === 0 ? (
                     <Card tone="muted" className="text-task font-medium text-text-secondary">
                       No tasks yet. Add your first item above.
                     </Card>
                   ) : null}
 
-                  {groups.map((group) => (
-                    <section key={group.label}>
-                      <SectionHeader className="mb-2">{group.label}</SectionHeader>
-
-                      <div className="space-y-2">
-                        {group.items.map((task) => (
-                          <SortableTaskCard
-                            key={task.id}
-                            task={task}
-                            canEdit={canEdit}
-                            isActiveDrag={activeDragId === task.id}
-                            onToggleTask={(taskId, currentStatus) => {
-                              void toggleTask(taskId, currentStatus);
-                            }}
-                            onDeleteTask={deleteTask}
-                            onSaveTask={(taskId, nextText) => {
-                              void saveTaskEdit(taskId, nextText);
-                            }}
-                          />
-                        ))}
-                      </div>
-                    </section>
+                  {orderedTasks.map((task) => (
+                    <SortableTaskCard
+                      key={task.id}
+                      task={task}
+                      canEdit={canEdit}
+                      isActiveDrag={activeDragId === task.id}
+                      onToggleTask={(taskId, currentStatus) => {
+                        void toggleTask(taskId, currentStatus);
+                      }}
+                      onDeleteTask={deleteTask}
+                      onSaveTask={(taskId, nextText) => {
+                        void saveTaskEdit(taskId, nextText);
+                      }}
+                    />
                   ))}
                 </div>
               </SortableContext>
