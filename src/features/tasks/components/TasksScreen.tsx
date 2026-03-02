@@ -373,13 +373,13 @@ function SortableTaskCard({
       style={style}
       data-task-id={task.id}
       className={[
-        'draggable-row relative box-border w-full max-w-full overflow-hidden rounded-2xl border border-white/10 bg-black/30',
+        'draggable-row relative box-border w-full max-w-full overflow-hidden rounded-2xl border border-white/10 bg-white/5',
         isDragging || isActiveDrag ? 'opacity-60' : '',
         task.done ? 'opacity-80' : '',
         task.priority === 'high' ? 'border-l-2 border-l-red-500/60' : '',
       ].join(' ')}
     >
-      <div className="absolute inset-y-0 right-0 z-0 flex items-center gap-2 pr-3">
+      <div className="absolute inset-y-0 right-0 z-0 w-[120px] flex items-center justify-end gap-2 pr-3">
         <button
           type="button"
           onClick={startEdit}
@@ -409,7 +409,7 @@ function SortableTaskCard({
           transition: dragX === 0 ? 'transform 0.2s ease' : 'none',
           touchAction: 'pan-y',
         }}
-        className="relative z-10 flex items-start gap-3 bg-black/30 px-3 py-2.5 sm:px-4 sm:py-3"
+        className="relative z-10 flex items-start gap-3 px-3 py-2.5 transition-transform will-change-transform sm:px-4 sm:py-3"
         onClick={() => {
           if (dragX !== 0) {
             setDragX(0);
