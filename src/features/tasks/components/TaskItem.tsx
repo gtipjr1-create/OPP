@@ -225,7 +225,7 @@ export default function TaskItem({
                   </span>
                 </div>
 
-                <div className="shrink-0 flex items-center gap-2 transition-opacity opacity-0 group-hover:opacity-100">
+                <div className="shrink-0 flex items-center gap-2 transition-opacity opacity-100 md:opacity-0 md:group-hover:opacity-100">
                   <button
                     onClick={(event) => startEditing(task.id, event)}
                     className="min-h-[36px] rounded-lg border border-white/10 bg-white/5 px-2 text-label font-sans uppercase tracking-widest font-semibold text-text-secondary hover:bg-white/10 hover:text-text-accent"
