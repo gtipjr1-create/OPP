@@ -5,7 +5,7 @@ import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core';
 import { DndContext, KeyboardSensor, MouseSensor, TouchSensor, closestCenter, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, arrayMove, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Check, GripVertical, Plus, Trash2 } from 'lucide-react';
+import { Archive, CalendarDays, Check, Copy, Download, GripVertical, Plus, Settings, Trash2 } from 'lucide-react';
 import { OppMark } from '@/components/OppMark';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
@@ -219,6 +219,7 @@ function SortableTaskCard({
   const [isSavingEdit, setIsSavingEdit] = React.useState(false);
   const [isEditing, setIsEditing] = React.useState(false);
   const [isSwiping, setIsSwiping] = React.useState(false);
+  const suppressNextToggleRef = React.useRef(false);
   const [editValue, setEditValue] = React.useState(task.title);
   const [touchStartX, setTouchStartX] = React.useState(0);
   const [dragX, setDragX] = React.useState(0);
@@ -233,6 +234,7 @@ function SortableTaskCard({
   const openConfirmDelete = (event: React.MouseEvent) => {
     event.stopPropagation();
     if (!canEdit || isDeleting) return;
+    suppressNextToggleRef.current = true;
     setDragX(0);
     setConfirmDelete(true);
   };
@@ -258,6 +260,7 @@ function SortableTaskCard({
   const startEdit = (event: React.MouseEvent) => {
     event.stopPropagation();
     if (!canEdit || isDeleting || isSavingEdit) return;
+    suppressNextToggleRef.current = true;
     setDragX(0);
     setIsEditing(true);
     setEditValue(task.title);
@@ -431,6 +434,10 @@ function SortableTaskCard({
         }}
         className="relative z-10 min-h-[56px] w-full max-w-full rounded-xl bg-black/20 transition-transform will-change-transform touch-pan-y"
         onClick={() => {
+          if (suppressNextToggleRef.current) {
+            suppressNextToggleRef.current = false;
+            return;
+          }
           if (dragX !== 0) {
             setDragX(0);
             return;
@@ -562,6 +569,7 @@ export default function TasksScreen() {
     activeTitle,
     reloadActiveTasks,
     createNewList,
+    duplicateActiveSession,
     saveTaskEdit,
     toggleTask,
     saveTitleEdit,
@@ -576,10 +584,12 @@ export default function TasksScreen() {
   const [isSavingOrder, setIsSavingOrder] = React.useState(false);
   const [isScheduleOpen, setIsScheduleOpen] = React.useState(false);
   const [isArchivedLogsOpen, setIsArchivedLogsOpen] = React.useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = React.useState(false);
   const [orderedTaskIds, setOrderedTaskIds] = React.useState<string[]>([]);
   const [activeDragId, setActiveDragId] = React.useState<string | null>(null);
   const orderedTaskIdsRef = React.useRef<string[]>([]);
   const newTaskInputRef = React.useRef<HTMLInputElement | null>(null);
+  const settingsMenuRef = React.useRef<HTMLDivElement | null>(null);
   const sensors = useSensors(
     useSensor(TouchSensor, {
       activationConstraint: {
@@ -620,6 +630,68 @@ export default function TasksScreen() {
   React.useEffect(() => {
     orderedTaskIdsRef.current = orderedTaskIds;
   }, [orderedTaskIds]);
+
+  React.useEffect(() => {
+    if (!isSettingsOpen) {
+      return;
+    }
+
+    const onPointerDown = (event: PointerEvent) => {
+      if (!settingsMenuRef.current) {
+        return;
+      }
+      if (!settingsMenuRef.current.contains(event.target as Node)) {
+        setIsSettingsOpen(false);
+      }
+    };
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsSettingsOpen(false);
+      }
+    };
+
+    window.addEventListener('pointerdown', onPointerDown);
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      window.removeEventListener('pointerdown', onPointerDown);
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, [isSettingsOpen]);
+
+  const exportActiveSession = React.useCallback(() => {
+    const position = new Map(orderedTaskIds.map((id, index) => [id, index]));
+    const exportTasks = [...tasks].sort((a, b) => {
+      const aPos = position.get(a.id) ?? 9999;
+      const bPos = position.get(b.id) ?? 9999;
+      if (aPos !== bPos) {
+        return aPos - bPos;
+      }
+      return a.priority.localeCompare(b.priority);
+    });
+
+    const exportPayload = {
+      title: activeTitle,
+      exportedAt: new Date().toISOString(),
+      tasks: exportTasks.map((task) => ({
+        title: task.title,
+        done: task.done,
+        priority: task.priority,
+        time: task.time ?? null,
+      })),
+    };
+
+    const blob = new Blob([JSON.stringify(exportPayload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const safeTitle = activeTitle.replace(/[^a-z0-9-_]+/gi, '-').replace(/^-+|-+$/g, '').toLowerCase() || 'session';
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = `${safeTitle}.json`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+  }, [activeTitle, orderedTaskIds, tasks]);
 
   const orderedTasks = React.useMemo(() => {
     const priorityOrder: Record<Priority, number> = { high: 0, normal: 1, low: 2 };
@@ -872,37 +944,6 @@ export default function TasksScreen() {
               />
             </div>
 
-            <div className="mt-1.5 flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-center lg:w-[260px] lg:justify-end">
-              <Button
-                variant="primary"
-                onClick={async () => {
-                  setIsCreatingSession(true);
-                  setNewSessionError(null);
-                  try {
-                    await createNewList();
-                  } catch (error) {
-                    const message = error instanceof Error ? error.message : 'Could not create session';
-                    setNewSessionError(
-                      process.env.NODE_ENV === 'development'
-                        ? `[E-TS-NEWSESSION] ${message}`
-                        : 'Could not create session. (E-TS-NEWSESSION)',
-                    );
-                  } finally {
-                    setIsCreatingSession(false);
-                  }
-                }}
-                disabled={isCreatingSession}
-                className="w-full sm:w-auto"
-              >
-                {isCreatingSession ? 'Creating...' : 'New Session'}
-              </Button>
-              <Button variant="secondary" className="w-full sm:w-auto">
-                Duplicate
-              </Button>
-              <Button variant="ghost" className="w-full sm:w-auto">
-                Export
-              </Button>
-            </div>
           </div>
 
           {newSessionError ? (
@@ -918,16 +959,18 @@ export default function TasksScreen() {
           ) : null}
         </header>
 
-        <div className="grid gap-4 md:grid-cols-[208px_1fr]">
-          <ScheduleRail
-            currentHour={currentHour}
-            scheduledCount={scheduled}
-            isOpen={isScheduleOpen}
-            onToggleOpen={() => setIsScheduleOpen((value) => !value)}
-            dotPriorityByHour={scheduleDotPriorityByHour}
-          />
+        <div className={['grid gap-4', isScheduleOpen ? 'md:grid-cols-[208px_1fr]' : 'md:grid-cols-1'].join(' ')}>
+          {isScheduleOpen ? (
+            <ScheduleRail
+              currentHour={currentHour}
+              scheduledCount={scheduled}
+              isOpen={isScheduleOpen}
+              onToggleOpen={() => setIsScheduleOpen((value) => !value)}
+              dotPriorityByHour={scheduleDotPriorityByHour}
+            />
+          ) : null}
 
-          <Card className="order-1 rounded-3xl md:order-2">
+          <Card className={['order-1 rounded-3xl', isScheduleOpen ? 'md:order-2' : 'md:order-1'].join(' ')}>
             <div className="mb-3">
               <SectionHeader>WORK STACK</SectionHeader>
 
@@ -1056,17 +1099,121 @@ export default function TasksScreen() {
                 </div>
               </SortableContext>
             </DndContext>
+
+            <div className="relative mt-3 min-h-[40px] border-t border-white/5 pt-2">
+              <Button
+                variant="secondary"
+                onClick={async () => {
+                  setIsCreatingSession(true);
+                  setNewSessionError(null);
+                  try {
+                    await createNewList();
+                  } catch (error) {
+                    const message = error instanceof Error ? error.message : 'Could not create session';
+                    setNewSessionError(
+                      process.env.NODE_ENV === 'development'
+                        ? `[E-TS-NEWSESSION] ${message}`
+                        : 'Could not create session. (E-TS-NEWSESSION)',
+                    );
+                  } finally {
+                    setIsCreatingSession(false);
+                  }
+                }}
+                disabled={isCreatingSession}
+                className="absolute left-1/2 min-h-[38px] -translate-x-1/2 rounded-xl border-white/20 bg-white/15 px-3 py-2 text-text-primary hover:bg-white/20"
+              >
+                {isCreatingSession ? 'Creating...' : 'New Session'}
+              </Button>
+
+              <div ref={settingsMenuRef} className="absolute bottom-0 right-0">
+                <button
+                  type="button"
+                  onClick={() => setIsSettingsOpen((value) => !value)}
+                  aria-expanded={isSettingsOpen}
+                  aria-label="Open session settings"
+                  className="inline-flex min-h-[38px] min-w-[38px] items-center justify-center rounded-xl border border-white/15 bg-white/5 text-text-secondary hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+                >
+                  <Settings size={16} />
+                </button>
+
+                {isSettingsOpen ? (
+                  <div className="absolute bottom-full right-0 z-30 mb-2 w-56 rounded-xl border border-white/10 bg-black/95 p-1.5 shadow-[0_10px_30px_rgba(0,0,0,0.35)]">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsScheduleOpen((value) => !value);
+                        setIsSettingsOpen(false);
+                      }}
+                      className="flex min-h-[36px] w-full items-center gap-2 rounded-lg px-2.5 text-left text-label font-sans uppercase tracking-widest font-semibold text-text-secondary hover:bg-white/5 hover:text-text-primary"
+                    >
+                      <CalendarDays size={14} />
+                      <span>{isScheduleOpen ? 'Hide Schedule' : 'Show Schedule'}</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsArchivedLogsOpen((value) => !value);
+                        setIsSettingsOpen(false);
+                      }}
+                      className="flex min-h-[36px] w-full items-center gap-2 rounded-lg px-2.5 text-left text-label font-sans uppercase tracking-widest font-semibold text-text-secondary hover:bg-white/5 hover:text-text-primary"
+                    >
+                      <Archive size={14} />
+                      <span>{isArchivedLogsOpen ? 'Hide Archived' : 'Show Archived'}</span>
+                    </button>
+
+                    <div className="my-1 border-t border-white/10" />
+
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        setIsSettingsOpen(false);
+                        setNewSessionError(null);
+                        try {
+                          await duplicateActiveSession();
+                        } catch (error) {
+                          const message = error instanceof Error ? error.message : 'Could not duplicate session';
+                          setNewSessionError(
+                            process.env.NODE_ENV === 'development'
+                              ? `[E-TS-DUPLICATE] ${message}`
+                              : 'Could not duplicate session. (E-TS-DUPLICATE)',
+                          );
+                        }
+                      }}
+                      className="flex min-h-[36px] w-full items-center gap-2 rounded-lg px-2.5 text-left text-label font-sans uppercase tracking-widest font-semibold text-text-secondary hover:bg-white/5 hover:text-text-primary"
+                    >
+                      <Copy size={14} />
+                      <span>Duplicate</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        exportActiveSession();
+                        setIsSettingsOpen(false);
+                      }}
+                      className="flex min-h-[36px] w-full items-center gap-2 rounded-lg px-2.5 text-left text-label font-sans uppercase tracking-widest font-semibold text-text-secondary hover:bg-white/5 hover:text-text-primary"
+                    >
+                      <Download size={14} />
+                      <span>Export</span>
+                    </button>
+                  </div>
+                ) : null}
+              </div>
+            </div>
           </Card>
         </div>
 
-        <ArchiveLogsPanel
-          lists={lists}
-          activeListId={activeListId}
-          listStatsById={listStatsById}
-          isOpen={isArchivedLogsOpen}
-          onToggleOpen={() => setIsArchivedLogsOpen((value) => !value)}
-          onSelectList={handleArchiveSelect}
-        />
+        {isArchivedLogsOpen ? (
+          <ArchiveLogsPanel
+            lists={lists}
+            activeListId={activeListId}
+            listStatsById={listStatsById}
+            isOpen={isArchivedLogsOpen}
+            onToggleOpen={() => setIsArchivedLogsOpen((value) => !value)}
+            onSelectList={handleArchiveSelect}
+          />
+        ) : null}
       </div>
     </div>
   );

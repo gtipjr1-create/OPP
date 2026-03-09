@@ -204,6 +204,61 @@ export function useTasksFeature() {
     }
   }, [handleClientFailure]);
 
+  const duplicateActiveSession = useCallback(async () => {
+    if (!activeListId) {
+      throw new Error('No active session to duplicate.');
+    }
+
+    const activeList = lists.find((list) => list.id === activeListId);
+    if (!activeList) {
+      throw new Error('Active session not found.');
+    }
+
+    const duplicateTitle = `${activeList.title} COPY`;
+
+    try {
+      const created = await createList(duplicateTitle);
+      const sourceTasks = [...tasks].sort((a, b) => a.position - b.position);
+      const duplicatedTasks: TaskRow[] = [];
+
+      for (const task of sourceTasks) {
+        const createdTask = await createTask(created.id, task.content);
+        if (task.is_done) {
+          await setTaskDone(createdTask.id, true);
+          duplicatedTasks.push({ ...createdTask, is_done: true });
+        } else {
+          duplicatedTasks.push(createdTask);
+        }
+      }
+
+      const completedCount = duplicatedTasks.filter((task) => task.is_done).length;
+      const totalCount = duplicatedTasks.length;
+
+      setLists((previous) => [created, ...previous]);
+      setListStatsById((previous) => ({
+        ...previous,
+        [created.id]: {
+          totalTasks: totalCount,
+          completedTasks: completedCount,
+          completionPct: totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0,
+          modifiedAt: new Date().toISOString(),
+        },
+      }));
+      setActiveListId(created.id);
+      setTasks(duplicatedTasks);
+      setEditingTaskId(null);
+      setIsEditingTitle(false);
+      setTitleEdit(created.title);
+      setErrorMessage(null);
+      return created;
+    } catch (error) {
+      const message = handleClientFailure('sessions.duplicate_failed', 'Failed to duplicate session.', error, {
+        activeListId,
+      });
+      throw error instanceof Error ? error : new Error(message);
+    }
+  }, [activeListId, handleClientFailure, lists, tasks]);
+
   const addTask = useCallback(async (contentOverride?: string) => {
     if (!activeListId) {
       return;
@@ -385,6 +440,7 @@ export function useTasksFeature() {
     activeTitle,
     reloadActiveTasks,
     createNewList,
+    duplicateActiveSession,
     addTask,
     toggleTask,
     deleteTask,
