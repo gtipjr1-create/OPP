@@ -37,7 +37,7 @@ export default function ArchiveLogsPanel({
 }: ArchiveLogsPanelProps) {
   return (
     <Card className="mt-4 rounded-3xl">
-      <div className="flex items-center justify-between">
+      <div className="flex min-h-[44px] items-center justify-between">
         <SectionHeader>ARCHIVED LOGS</SectionHeader>
         <button
           type="button"
@@ -54,11 +54,11 @@ export default function ArchiveLogsPanel({
 
       {isOpen ? (
         <>
-          <Card tone="dark" className="mt-2 flex items-center gap-3">
+          <Card tone="dark" className="mt-2 rounded-xl p-2.5">
             <Input placeholder="Search history..." className="flex-1" />
           </Card>
 
-          <div className="mt-4 space-y-2 text-meta font-mono tracking-wide text-text-secondary">
+          <div className="mt-2 space-y-2 text-meta font-mono tracking-wide text-text-secondary">
             {lists.slice(0, 6).map((list) => (
               <button
                 key={list.id}

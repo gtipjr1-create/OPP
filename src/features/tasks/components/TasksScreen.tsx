@@ -5,7 +5,7 @@ import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core';
 import { DndContext, KeyboardSensor, MouseSensor, TouchSensor, closestCenter, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, arrayMove, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { GripVertical, Trash2 } from 'lucide-react';
+import { Check, GripVertical, Plus, Trash2 } from 'lucide-react';
 import { OppMark } from '@/components/OppMark';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
@@ -34,8 +34,8 @@ type Task = {
   section?: string;
 };
 
-const SWIPE_THRESHOLD = 80;
-const SWIPE_REVEAL_OFFSET = 116;
+const SWIPE_REVEAL_OFFSET = 120;
+const SWIPE_THRESHOLD = 72;
 
 function getTodayLabel() {
   const now = new Date();
@@ -218,6 +218,7 @@ function SortableTaskCard({
   const [isDeleting, setIsDeleting] = React.useState(false);
   const [isSavingEdit, setIsSavingEdit] = React.useState(false);
   const [isEditing, setIsEditing] = React.useState(false);
+  const [isSwiping, setIsSwiping] = React.useState(false);
   const [editValue, setEditValue] = React.useState(task.title);
   const [touchStartX, setTouchStartX] = React.useState(0);
   const [dragX, setDragX] = React.useState(0);
@@ -263,30 +264,41 @@ function SortableTaskCard({
   };
 
   const handleTouchStart = (event: React.TouchEvent) => {
-    if (isEditing || confirmDelete) {
+    if (isEditing || confirmDelete || !canEdit) {
       return;
     }
     setTouchStartX(event.touches[0].clientX);
+    setIsSwiping(false);
   };
 
   const handleTouchMove = (event: React.TouchEvent) => {
-    if (isEditing || confirmDelete) {
+    if (isEditing || confirmDelete || !canEdit) {
       return;
     }
+    setIsSwiping(true);
     const diff = event.touches[0].clientX - touchStartX;
     const nextDrag = Math.max(-SWIPE_REVEAL_OFFSET, Math.min(0, diff));
     setDragX(nextDrag);
   };
 
   const handleTouchEnd = () => {
-    if (isEditing || confirmDelete) {
+    if (isEditing || confirmDelete || !canEdit) {
       return;
     }
+    setIsSwiping(false);
     if (dragX < -SWIPE_THRESHOLD) {
       setDragX(-SWIPE_REVEAL_OFFSET);
       return;
     }
     setDragX(0);
+  };
+
+  const handleTouchCancel = () => {
+    if (isEditing || confirmDelete || !canEdit) {
+      return;
+    }
+    setIsSwiping(false);
+    setDragX(dragX < -SWIPE_THRESHOLD ? -SWIPE_REVEAL_OFFSET : 0);
   };
 
   React.useEffect(() => {
@@ -373,7 +385,7 @@ function SortableTaskCard({
       style={style}
       data-task-id={task.id}
       className={[
-        'draggable-row relative w-full max-w-full overflow-hidden rounded-2xl border border-white/10 bg-white/5',
+        'draggable-row relative min-h-[56px] w-full max-w-full overflow-hidden rounded-xl border border-white/8 bg-white/[0.04]',
         isDragging || isActiveDrag ? 'opacity-60' : '',
         task.done ? 'opacity-80' : '',
         task.priority === 'high' ? 'border-l-2 border-l-red-500/60' : '',
@@ -411,12 +423,13 @@ function SortableTaskCard({
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
+        onTouchCancel={handleTouchCancel}
         style={{
           transform: `translateX(${dragX}px)`,
-          transition: dragX === 0 ? 'transform 0.2s ease' : 'none',
+          transition: isSwiping ? 'none' : 'transform 0.18s ease-out',
           touchAction: 'pan-y',
         }}
-        className="relative z-10 w-full max-w-full rounded-2xl bg-white/5 transition-transform will-change-transform touch-pan-y"
+        className="relative z-10 min-h-[56px] w-full max-w-full rounded-xl bg-black/20 transition-transform will-change-transform touch-pan-y"
         onClick={() => {
           if (dragX !== 0) {
             setDragX(0);
@@ -427,9 +440,9 @@ function SortableTaskCard({
           }
         }}
       >
-        <div className="flex w-full items-center gap-3 px-3 py-2.5 sm:px-4 sm:py-3">
+        <div className="grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2.5 px-3 py-2 sm:px-3.5 sm:py-2.5">
           <label
-            className="flex min-h-[40px] min-w-[40px] items-center justify-center pt-0.5"
+            className="flex min-h-[44px] min-w-[44px] items-center justify-center"
             onClick={(event) => event.stopPropagation()}
           >
             <input
@@ -437,13 +450,26 @@ function SortableTaskCard({
               checked={task.done}
               onChange={() => onToggleTask(task.id, task.done)}
               aria-label={task.done ? `Mark ${task.title} as incomplete` : `Mark ${task.title} as complete`}
-              className="h-6 w-6 accent-blue-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+              className="peer sr-only"
               disabled={!canEdit}
             />
+            <span
+              className={[
+                'inline-flex h-6 w-6 items-center justify-center rounded-md border transition-colors',
+                'peer-focus-visible:ring-2 peer-focus-visible:ring-[color:var(--state-active)] peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-black',
+                task.done
+                  ? 'border-[color:var(--state-active)]/55 bg-blue-500/15 text-[color:var(--state-active)]'
+                  : 'border-white/15 bg-black/45 text-transparent',
+                canEdit ? '' : 'opacity-60',
+              ].join(' ')}
+              aria-hidden="true"
+            >
+              <Check size={14} strokeWidth={2.5} />
+            </span>
           </label>
 
           {isEditing ? (
-            <div className="min-w-0 flex-1 overflow-hidden rounded-md">
+            <div className="min-w-0 overflow-hidden rounded-md">
               <input
                 value={editValue}
                 disabled={!canEdit || isSavingEdit}
@@ -468,16 +494,16 @@ function SortableTaskCard({
               </div>
             </div>
           ) : (
-            <div className="min-w-0 flex-1">
+            <div className="min-w-0">
               <div
                 className={[
-                  'block truncate text-task font-medium',
+                  'block truncate text-task font-medium leading-tight',
                   task.done ? 'line-through decoration-blue-500 decoration-4 text-text-tertiary' : 'text-text-primary',
                 ].join(' ')}
               >
                 {task.title}
               </div>
-              <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-meta font-mono tracking-wide text-text-secondary">
+              <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-meta font-mono tracking-wide text-text-secondary">
                 <span>{task.time ? `@ ${formatDisplayTime(task.time)}` : '-'}</span>
                 <span className="text-text-tertiary">|</span>
                 <span
@@ -495,8 +521,8 @@ function SortableTaskCard({
             </div>
           )}
 
-          {isEditing ? (
-            <div className="shrink-0">
+          <div className="flex min-h-[36px] min-w-[36px] items-center justify-end">
+            {isEditing ? (
               <button
                 ref={setActivatorNodeRef}
                 type="button"
@@ -510,8 +536,8 @@ function SortableTaskCard({
               >
                 <GripVertical size={14} />
               </button>
-            </div>
-          ) : null}
+            ) : null}
+          </div>
         </div>
       </div>
     </div>
@@ -553,6 +579,7 @@ export default function TasksScreen() {
   const [orderedTaskIds, setOrderedTaskIds] = React.useState<string[]>([]);
   const [activeDragId, setActiveDragId] = React.useState<string | null>(null);
   const orderedTaskIdsRef = React.useRef<string[]>([]);
+  const newTaskInputRef = React.useRef<HTMLInputElement | null>(null);
   const sensors = useSensors(
     useSensor(TouchSensor, {
       activationConstraint: {
@@ -732,7 +759,7 @@ export default function TasksScreen() {
   if (loading) {
     return (
       <div className="min-h-dvh bg-black text-text-primary overflow-x-hidden">
-        <div className="mx-auto flex min-h-dvh max-w-5xl items-center justify-center px-5 pb-10 pt-8">
+        <div className="mx-auto flex min-h-dvh max-w-5xl items-center justify-center px-5 pb-8 pt-6">
           <LoadingMark label="Loading session..." size={32} />
         </div>
       </div>
@@ -741,24 +768,24 @@ export default function TasksScreen() {
 
   return (
     <div className="min-h-dvh bg-black text-text-primary overflow-x-hidden">
-      <div className="mx-auto max-w-5xl px-5 pb-10 pt-8">
-        <header className="mb-8">
+      <div className="mx-auto max-w-5xl px-5 pb-8 pt-6">
+        <header className="mb-6">
           {errorMessage ? (
-            <InlineNotice variant="error" className="mb-4">
+            <InlineNotice variant="error" className="mb-3">
               {errorMessage}
             </InlineNotice>
           ) : null}
           {isSavingOrder ? (
-            <InlineNotice variant="info" className="mb-4">
+            <InlineNotice variant="info" className="mb-3">
               Saving order...
             </InlineNotice>
           ) : null}
 
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div>
               <SectionHeader>ACTIVE SESSION</SectionHeader>
 
-              <div className="mt-2">
+              <div className="mt-1.5">
                 <div className="flex items-end justify-center gap-3">
                   <OppMark size={48} />
                 </div>
@@ -776,7 +803,7 @@ export default function TasksScreen() {
                       }
                     }}
                     className={[
-                      'mt-2 w-full bg-transparent text-center text-title font-sans uppercase tracking-tight font-bold text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black',
+                      'mt-1.5 w-full bg-transparent text-center text-title font-sans uppercase tracking-tight font-bold text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black',
                       canEdit ? 'opacity-100' : 'opacity-70',
                     ].join(' ')}
                   />
@@ -789,7 +816,7 @@ export default function TasksScreen() {
                       setTitleEdit(activeTitle);
                     }}
                     className={[
-                      'mt-2 w-full text-center text-title font-sans uppercase tracking-tight font-bold text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black',
+                      'mt-1.5 w-full text-center text-title font-sans uppercase tracking-tight font-bold text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black',
                       canEdit ? 'opacity-100 hover:text-text-accent' : 'opacity-70',
                     ].join(' ')}
                   >
@@ -798,7 +825,7 @@ export default function TasksScreen() {
                 )}
               </div>
 
-              <div className="mt-2 flex flex-col items-center gap-2">
+              <div className="mt-1.5 flex flex-col items-center gap-1.5">
                 <div className="flex flex-wrap items-center justify-center gap-3 text-meta font-mono tracking-wide text-text-secondary">
                   <div className="rounded-full border border-white/10 bg-white/5 px-3 py-1">{getTodayLabel()}</div>
 
@@ -830,7 +857,7 @@ export default function TasksScreen() {
                 </div>
               </div>
 
-              <div className="mt-2 text-meta font-mono tracking-wide text-text-secondary">
+              <div className="mt-1.5 text-meta font-mono tracking-wide text-text-secondary">
                 {total} tasks | {high} high priority | {scheduled} scheduled
               </div>
 
@@ -845,7 +872,7 @@ export default function TasksScreen() {
               />
             </div>
 
-            <div className="mt-2 flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-center lg:w-[260px] lg:justify-end">
+            <div className="mt-1.5 flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-center lg:w-[260px] lg:justify-end">
               <Button
                 variant="primary"
                 onClick={async () => {
@@ -879,19 +906,19 @@ export default function TasksScreen() {
           </div>
 
           {newSessionError ? (
-            <InlineNotice variant="error" className="mt-4">
+            <InlineNotice variant="error" className="mt-3">
               New Session failed: {newSessionError}
             </InlineNotice>
           ) : null}
 
           {orderSavedToast ? (
-            <InlineNotice variant="success" className="mt-4">
+            <InlineNotice variant="success" className="mt-3">
               Order saved
             </InlineNotice>
           ) : null}
         </header>
 
-        <div className="grid gap-5 md:grid-cols-[208px_1fr]">
+        <div className="grid gap-4 md:grid-cols-[208px_1fr]">
           <ScheduleRail
             currentHour={currentHour}
             scheduledCount={scheduled}
@@ -901,7 +928,7 @@ export default function TasksScreen() {
           />
 
           <Card className="order-1 rounded-3xl md:order-2">
-            <div className="mb-4">
+            <div className="mb-3">
               <SectionHeader>WORK STACK</SectionHeader>
 
               <form
@@ -918,6 +945,7 @@ export default function TasksScreen() {
                     await createTaskAction(formData);
                     setNewTaskText('');
                     await reloadActiveTasks();
+                    newTaskInputRef.current?.focus();
                   } catch (error) {
                     const message = error instanceof Error ? error.message : 'Could not create task';
                     setAddTaskError(
@@ -929,12 +957,13 @@ export default function TasksScreen() {
                     setIsAddingTask(false);
                   }
                 }}
-                className="mt-2 flex flex-col gap-3 rounded-2xl border border-white/10 bg-black/30 p-4 sm:flex-row sm:items-center"
+                className="mt-1.5 flex items-center gap-2 rounded-xl border border-white/10 bg-black/20 p-1.5"
               >
                 <input type="hidden" name="list_id" value={activeListId ?? ''} />
                 <input type="hidden" name="content" value={withPriorityTag(newTaskText, selectedPriority)} />
                 <input type="hidden" name="priority" value={selectedPriority} />
                 <Input
+                  ref={newTaskInputRef}
                   value={newTaskText}
                   disabled={!canEdit}
                   onChange={(event) => {
@@ -943,22 +972,25 @@ export default function TasksScreen() {
                       setAddTaskError(null);
                     }
                   }}
-                  placeholder="Add task..."
-                  className="min-h-[48px] flex-1"
+                  placeholder="Quick add task..."
+                  className="min-h-[40px] flex-1 rounded-lg border border-white/10 bg-black/30 px-3"
                 />
                 <button
                   type="submit"
                   disabled={!canEdit || !newTaskText.trim() || isAddingTask}
                   className={[
-                    'min-h-[44px] w-full rounded-xl px-4 py-2 text-label font-sans uppercase tracking-widest font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black sm:w-auto',
-                    canEdit ? 'bg-white text-black hover:opacity-90' : 'bg-white/20 text-text-tertiary',
+                    'inline-flex min-h-[40px] min-w-[40px] shrink-0 items-center justify-center rounded-lg border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black',
+                    canEdit
+                      ? 'border-[color:var(--state-active)]/40 bg-blue-500/10 text-text-accent hover:bg-blue-500/20'
+                      : 'border-white/10 bg-white/5 text-text-tertiary',
                   ].join(' ')}
+                  aria-label={isAddingTask ? 'Adding task' : 'Add task'}
                 >
-                  {isAddingTask ? 'Adding...' : 'Add'}
+                  {isAddingTask ? '...' : <Plus size={16} />}
                 </button>
               </form>
 
-              <div className="mt-2 flex flex-wrap items-center gap-2">
+              <div className="mt-1 flex flex-wrap items-center gap-1.5 border-t border-white/5 pt-1.5">
                 {(['high', 'normal', 'low'] as Priority[]).map((priority) => (
                   <button
                     key={priority}
@@ -968,7 +1000,7 @@ export default function TasksScreen() {
                     aria-pressed={selectedPriority === priority}
                     aria-label={`Set priority to ${priority}`}
                     className={[
-                      'rounded-full border px-3 py-1 text-label font-sans uppercase tracking-widest font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black',
+                      'min-h-[34px] rounded-full border px-2.5 py-1 text-label font-sans uppercase tracking-widest font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black',
                       selectedPriority === priority
                         ? priority === 'high'
                           ? 'border-[color:var(--priority-high)]/60 text-[color:var(--priority-high)] bg-red-500/10'
@@ -984,7 +1016,7 @@ export default function TasksScreen() {
               </div>
 
               {addTaskError ? (
-                <InlineNotice variant="error" className="mt-3">
+                <InlineNotice variant="error" className="mt-2">
                   {addTaskError}
                 </InlineNotice>
               ) : null}
@@ -999,9 +1031,9 @@ export default function TasksScreen() {
               }}
             >
               <SortableContext items={orderedTaskIdList} strategy={verticalListSortingStrategy}>
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   {orderedTasks.length === 0 ? (
-                    <Card tone="muted" className="text-task font-medium text-text-secondary">
+                    <Card tone="muted" className="p-3 text-task font-medium text-text-secondary">
                       No tasks yet. Add your first item above.
                     </Card>
                   ) : null}

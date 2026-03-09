@@ -22,34 +22,28 @@ export default function StatsCards({
 }: StatsCardsProps) {
   return (
     <div className="mt-4">
-      <Card className="space-y-3 md:hidden">
-        <div>
-          <div className="flex items-center justify-between gap-3">
-            <SectionHeader>COMPLETION</SectionHeader>
-            <div className="text-task font-medium text-text-primary">{pct}%</div>
+      <Card className="p-2.5 md:hidden">
+        <div className="grid grid-cols-3 gap-1.5">
+          <div className="rounded-lg border border-white/5 bg-black/20 px-2 py-1">
+            <SectionHeader className="text-[0.55rem]">COMPLETION</SectionHeader>
+            <div className="mt-0.5 text-task font-medium leading-none text-text-primary">{pct}%</div>
+            <div className="text-meta font-mono tracking-wide text-text-secondary">
+              {done}/{total}
+            </div>
           </div>
-          <div className="mt-1 text-right text-meta font-mono tracking-wide text-text-secondary">
-            {done}/{total}
-          </div>
-        </div>
 
-        <div className="border-t border-white/5 pt-3">
-          <div className="flex items-center justify-between gap-3">
-            <SectionHeader>WEIGHTED</SectionHeader>
-            <div className="text-task font-medium text-text-primary">{weightedPct}%</div>
+          <div className="rounded-lg border border-white/5 bg-black/20 px-2 py-1">
+            <SectionHeader className="text-[0.55rem]">WEIGHTED</SectionHeader>
+            <div className="mt-0.5 text-task font-medium leading-none text-text-primary">{weightedPct}%</div>
+            <div className="text-meta font-mono tracking-wide text-text-secondary">
+              {pointsDone}/{pointsTotal}
+            </div>
           </div>
-          <div className="mt-1 text-right text-meta font-mono tracking-wide text-text-secondary">
-            {pointsDone}/{pointsTotal}
-          </div>
-        </div>
 
-        <div className="border-t border-white/5 pt-3">
-          <div className="flex items-center justify-between gap-3">
-            <SectionHeader>SCHEDULED</SectionHeader>
-            <div className="text-task font-medium text-text-primary">{scheduled} items</div>
-          </div>
-          <div className="mt-1 truncate text-meta font-mono tracking-wide text-text-secondary">
-            Only tasks with a time appear on the rail.
+          <div className="rounded-lg border border-white/5 bg-black/20 px-2 py-1">
+            <SectionHeader className="text-[0.55rem]">SCHEDULED</SectionHeader>
+            <div className="mt-0.5 text-task font-medium leading-none text-text-primary">{scheduled}</div>
+            <div className="text-meta font-mono tracking-wide text-text-secondary">items</div>
           </div>
         </div>
       </Card>
