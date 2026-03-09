@@ -1,185 +1,129 @@
-# OPP — Next Refinement Phases
-## Header Compression + Work Stack Hierarchy Polish
+# OPP — Next Session Phases
+## Post-Phase-10 Refinement Pass
 
 ### Objective
-Tighten the mobile session page further by compressing the top header stack, improving section hierarchy, relocating utility controls to more logical positions, and reducing the remaining feeling of visual heaviness.
+Build on the stronger mobile command-surface direction by tightening top-of-screen hierarchy, refining Work Stack empty-state behavior, and continuing the shift from visual compression into more stable real-use testing.
 
 ---
 
-## Phase 1 — Compress top header spacing
-**Goal:** Reduce the amount of vertical ceremony before Work Stack begins.
+## Phase 11 — Micro-compress the top session stack
+**Goal:** Tighten the top area so it reaches action faster without losing identity.
 
 ### Implement
-- Tighten spacing between:
-  - session label and icon
+- Reduce vertical spacing between:
+  - section label and icon
   - icon and date title
-  - title and status/date pills
-  - pills and meta line
+  - title and pill row
+  - pill row and meta line
   - meta line and summary strip
-- Reduce unnecessary vertical breathing room across the top stack
-- Keep the screen feeling premium, but more execution-first
+- Keep the top visually premium, but less ceremonious
+- Preserve readability while making the whole header stack feel tighter on mobile
 
 ### Deliverable
-A top section that feels faster, denser, and more appropriate for a one-screen mobile command surface.
+A more compact session header that gets the user into Work Stack faster.
 
 ---
 
-## Phase 2 — Reduce session icon footprint
-**Goal:** Keep identity while reclaiming vertical space.
+## Phase 12 — Refine icon footprint and title balance
+**Goal:** Keep identity at the top of the page while reducing unnecessary visual weight.
 
 ### Implement
-- Slightly reduce the visual size of the top session icon
-- Tighten the margin above and below it
-- Ensure the icon supports the header instead of dominating it
+- Slightly reduce the central icon size, or keep size and reduce surrounding margin
+- Ensure the date title remains the primary anchor of the top section
+- Rebalance icon-to-title spacing so the icon supports the header instead of dominating it
 
 ### Deliverable
-A cleaner header anchor that preserves brand identity without consuming too much prime space.
+A cleaner top anchor with stronger hierarchy and less wasted vertical space.
 
 ---
 
-## Phase 3 — Simplify status pill structure
-**Goal:** Reduce the number of floating status elements and make the header feel more unified.
+## Phase 13 — Tighten summary strip shell and stat internals
+**Goal:** Make the stats area feel like a compact operational readout instead of a secondary hero block.
 
 ### Implement
-- Review the relationship between:
-  - date pill
-  - unlocked pill
-  - active pill
-- Combine or tighten status presentation where possible
-- Reduce the feeling of multiple disconnected badge rows
-- Aim for one cleaner status arrangement instead of stacked floating units
+- Reduce outer shell padding around the stat strip
+- Slightly reduce stat-card height if safe for readability
+- Tighten label/value/subvalue spacing inside each stat card
+- Keep the 3-up structure, but make it feel denser and calmer
 
 ### Deliverable
-A more disciplined header status system with less visual fragmentation.
+A slimmer summary strip with better scan speed and less visual mass.
 
 ---
 
-## Phase 4 — Tighten the summary strip shell
-**Goal:** Make the metrics area feel like a compact readout rather than a second hero block.
+## Phase 14 — Sharpen Work Stack empty state
+**Goal:** Make the empty state helpful without letting it become another oversized content block.
 
 ### Implement
-- Reduce outer shell padding around the 3-stat strip
-- Slightly reduce stat tile height if spacing still feels tall
-- Tighten internal spacing between:
-  - label
-  - primary number
-  - secondary value
-- Keep readability strong while reducing visual mass
+- Slightly reduce empty-state height
+- Refine empty-state copy if needed so it stays clear and minimal
+- Keep the message supportive, but lighter in visual presence
+- Ensure the empty-state panel fits the cleaner, utility-first direction of the section
 
 ### Deliverable
-A slimmer, more efficient summary strip that supports quick scanning without pushing Work Stack too far down.
+A more disciplined empty state that supports first use without bloating the card.
 
 ---
 
-## Phase 5 — Move settings control into Work Stack header
-**Goal:** Place settings where they belong structurally and reduce footer imbalance.
+## Phase 15 — Review plus-button visual dominance
+**Goal:** Make sure the quick-add action feels strong without overpowering the input row.
 
 ### Implement
-- Remove the settings cog from the bottom action row
-- Move the settings control into the Work Stack header
-- Use the header pattern:
-  - left: `WORK STACK`
-  - right: settings/action control
-- Make the settings control feel like a section utility, not a competing action button
+- Assess whether the plus button is slightly too visually dominant
+- If needed, reduce shell weight, fill intensity, or border emphasis
+- Keep tap confidence high while bringing it into better balance with the input field
 
 ### Deliverable
-A cleaner Work Stack layout with stronger information architecture and less awkward action composition.
+A quick-add action that feels clear, usable, and integrated with the Work Stack composer.
 
 ---
 
-## Phase 6 — Quiet the settings control visually
-**Goal:** Make the settings control feel secondary and integrated.
+## Phase 16 — Stabilize current layout for self-testing
+**Goal:** Pause major redesigning long enough to observe real usage honestly.
 
 ### Implement
-- Reduce the visual weight of the cog button
-- Use a subtler ghost/utility treatment
-- Ensure it does not compete with primary actions
-- Keep it accessible but visually restrained
+- Freeze the current layout direction for a short testing window
+- Use the page repeatedly in normal workflow
+- Record friction points such as:
+  - hesitation
+  - missed taps
+  - awkward scroll moments
+  - controls that feel unclear
+  - elements that get ignored
+- Avoid redesigning every small thing immediately during the observation period
 
 ### Deliverable
-A settings control that feels intentional, useful, and properly secondary.
+A cleaner evidence base for the next round of changes.
 
 ---
 
-## Phase 7 — Reassess New Session placement
-**Goal:** Clarify whether `NEW SESSION` belongs inside Work Stack or elsewhere in the page hierarchy.
+## Phase 17 — Convert observations into a behavior-based polish pass
+**Goal:** Let real usage guide the next layer of refinement.
 
 ### Implement
-- Review whether `NEW SESSION` should remain in the Work Stack card
-- Evaluate alternate placements if needed:
-  - higher session action area
-  - page-level action zone
-  - utility menu / overflow area
-- Prioritize keeping Work Stack focused on:
-  - task capture
-  - task list
-  - work execution
+- Review self-testing notes
+- Separate issues into:
+  - hierarchy problems
+  - interaction problems
+  - spacing problems
+  - visual polish opportunities
+- Prioritize actual friction over hypothetical tweaks
+- Use the findings to define the next focused pass instead of reopening broad redesign mode
 
 ### Deliverable
-A clearer page hierarchy with less responsibility packed into the Work Stack card.
-
----
-
-## Phase 8 — Reduce nested-card feeling inside Work Stack
-**Goal:** Make the section feel cleaner and less “box inside box inside box.”
-
-### Implement
-- Review the relationship between:
-  - outer Work Stack shell
-  - quick add row shell
-  - empty state shell
-  - action row shell
-- Remove or soften any unnecessary nested boundaries
-- Preserve structure while reducing the feeling of layered containment
-
-### Deliverable
-A cleaner section rhythm with less visual heaviness and better overall polish.
-
----
-
-## Phase 9 — Tighten empty state presentation
-**Goal:** Reduce space taken by the empty state while keeping it useful and readable.
-
-### Implement
-- Reduce empty state height if it feels oversized
-- Keep the message clear, but avoid excess padding
-- Make the empty state feel supportive rather than dominant
-
-### Deliverable
-A lighter empty state that supports the flow without adding unnecessary visual bulk.
-
----
-
-## Phase 10 — Final precision compression pass
-**Goal:** Tune the full screen after hierarchy changes are in place.
-
-### Review and tighten
-- header stack height
-- summary strip height
-- Work Stack header alignment
-- quick add row spacing
-- empty state spacing
-- action row clarity
-- section-to-section spacing
-- remaining sources of visual heaviness
-
-### Deliverable
-A more disciplined, low-scroll mobile session screen with stronger hierarchy, cleaner utility placement, and better operational focus.
+A more grounded next-phase roadmap based on use, not just instinct.
 
 ---
 
 ## Suggested Build Order
 
-### Track A — Highest impact first
-1. Phase 1 — Compress top header spacing
-2. Phase 4 — Tighten the summary strip shell
-3. Phase 5 — Move settings control into Work Stack header
-4. Phase 6 — Quiet the settings control visually
-5. Phase 7 — Reassess New Session placement
+### Track A — Immediate UI tightening
+1. Phase 11 — Micro-compress the top session stack
+2. Phase 12 — Refine icon footprint and title balance
+3. Phase 13 — Tighten summary strip shell and stat internals
+4. Phase 14 — Sharpen Work Stack empty state
+5. Phase 15 — Review plus-button visual dominance
 
-### Track B — Secondary polish
-6. Phase 2 — Reduce session icon footprint
-7. Phase 3 — Simplify status pill structure
-8. Phase 8 — Reduce nested-card feeling inside Work Stack
-9. Phase 9 — Tighten empty state presentation
-10. Phase 10 — Final precision compression pass
+### Track B — Maturity / validation
+6. Phase 16 — Stabilize current layout for self-testing
+7. Phase 17 — Convert observations into a behavior-based polish pass

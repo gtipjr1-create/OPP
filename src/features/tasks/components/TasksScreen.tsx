@@ -860,7 +860,7 @@ export default function TasksScreen() {
   return (
     <div className="min-h-dvh bg-black text-text-primary overflow-x-hidden">
       <div className="mx-auto max-w-5xl px-5 pb-8 pt-6">
-        <header className="mb-5">
+        <header className="mb-4.5">
           {errorMessage ? (
             <InlineNotice variant="error" className="mb-2">
               {errorMessage}
@@ -872,13 +872,13 @@ export default function TasksScreen() {
             </InlineNotice>
           ) : null}
 
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+          <div className="flex flex-col gap-2.5 lg:flex-row lg:items-start lg:justify-between">
             <div>
               <SectionHeader>ACTIVE SESSION</SectionHeader>
 
-              <div className="mt-0.5">
-                <div className="flex items-end justify-center gap-2">
-                  <OppMark size={42} />
+              <div className="mt-0">
+                <div className="flex items-end justify-center gap-1.5">
+                  <OppMark size={38} />
                 </div>
                 {isEditingTitle ? (
                   <input
@@ -894,7 +894,7 @@ export default function TasksScreen() {
                       }
                     }}
                     className={[
-                      'mt-1 w-full bg-transparent text-center text-title font-sans uppercase tracking-tight font-bold text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black',
+                      'mt-0.5 w-full bg-transparent text-center text-title font-sans uppercase tracking-tight font-bold text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black',
                       canEdit ? 'opacity-100' : 'opacity-70',
                     ].join(' ')}
                   />
@@ -907,7 +907,7 @@ export default function TasksScreen() {
                       setTitleEdit(activeTitle);
                     }}
                     className={[
-                      'mt-1 w-full text-center text-title font-sans uppercase tracking-tight font-bold text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black',
+                      'mt-0.5 w-full text-center text-title font-sans uppercase tracking-tight font-bold text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black',
                       canEdit ? 'opacity-100 hover:text-text-accent' : 'opacity-70',
                     ].join(' ')}
                   >
@@ -916,7 +916,7 @@ export default function TasksScreen() {
                 )}
               </div>
 
-              <div className="mt-1 flex flex-wrap items-center justify-center gap-2 text-meta font-mono tracking-wide text-text-secondary">
+              <div className="mt-0.5 flex flex-wrap items-center justify-center gap-1.5 text-meta font-mono tracking-wide text-text-secondary">
                 <div className="rounded-full border border-white/10 bg-white/5 px-3 py-1">{getTodayLabel()}</div>
 
                 <button
@@ -946,7 +946,7 @@ export default function TasksScreen() {
                 </div>
               </div>
 
-              <div className="mt-1 text-meta font-mono tracking-wide text-text-secondary">
+              <div className="mt-0.5 text-meta font-mono tracking-wide text-text-secondary">
                 {total} tasks | {high} high priority | {scheduled} scheduled
               </div>
 
@@ -1145,7 +1145,7 @@ export default function TasksScreen() {
                   className={[
                     'inline-flex min-h-[40px] min-w-[40px] shrink-0 items-center justify-center rounded-lg border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black',
                     canEdit
-                      ? 'border-[color:var(--state-active)]/40 bg-blue-500/10 text-text-accent hover:bg-blue-500/20'
+                      ? 'border-[color:var(--state-active)]/25 bg-blue-500/6 text-[color:var(--state-active)]/90 hover:bg-blue-500/12'
                       : 'border-white/10 bg-white/5 text-text-tertiary',
                   ].join(' ')}
                   aria-label={isAddingTask ? 'Adding task' : 'Add task'}
@@ -1197,8 +1197,8 @@ export default function TasksScreen() {
               <SortableContext items={orderedTaskIdList} strategy={verticalListSortingStrategy}>
                 <div className="space-y-1">
                   {orderedTasks.length === 0 ? (
-                    <div className="rounded-xl border border-white/5 bg-black/10 px-2.5 py-1.5 text-meta font-mono tracking-wide text-text-secondary">
-                      No tasks yet. Add your first item above.
+                    <div className="rounded-xl border border-white/5 bg-black/10 px-2 py-1 text-meta font-mono tracking-wide text-text-secondary">
+                      No tasks yet. Use quick add above.
                     </div>
                   ) : null}
 
