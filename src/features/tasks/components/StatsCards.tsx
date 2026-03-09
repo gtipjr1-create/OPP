@@ -21,28 +21,28 @@ export default function StatsCards({
   scheduled,
 }: StatsCardsProps) {
   return (
-    <div className="mt-4">
-      <Card className="p-2.5 md:hidden">
-        <div className="grid grid-cols-3 gap-1.5">
-          <div className="rounded-lg border border-white/5 bg-black/20 px-2 py-1">
+    <div className="mt-3">
+      <Card className="p-2 md:hidden">
+        <div className="grid grid-cols-3 gap-1">
+          <div className="rounded-lg border border-white/5 bg-black/20 px-2 py-0.5">
             <SectionHeader className="text-[0.55rem]">COMPLETION</SectionHeader>
-            <div className="mt-0.5 text-task font-medium leading-none text-text-primary">{pct}%</div>
+            <div className="mt-0 text-task font-medium leading-none text-text-primary">{pct}%</div>
             <div className="text-meta font-mono tracking-wide text-text-secondary">
               {done}/{total}
             </div>
           </div>
 
-          <div className="rounded-lg border border-white/5 bg-black/20 px-2 py-1">
+          <div className="rounded-lg border border-white/5 bg-black/20 px-2 py-0.5">
             <SectionHeader className="text-[0.55rem]">WEIGHTED</SectionHeader>
-            <div className="mt-0.5 text-task font-medium leading-none text-text-primary">{weightedPct}%</div>
+            <div className="mt-0 text-task font-medium leading-none text-text-primary">{weightedPct}%</div>
             <div className="text-meta font-mono tracking-wide text-text-secondary">
               {pointsDone}/{pointsTotal}
             </div>
           </div>
 
-          <div className="rounded-lg border border-white/5 bg-black/20 px-2 py-1">
+          <div className="rounded-lg border border-white/5 bg-black/20 px-2 py-0.5">
             <SectionHeader className="text-[0.55rem]">SCHEDULED</SectionHeader>
-            <div className="mt-0.5 text-task font-medium leading-none text-text-primary">{scheduled}</div>
+            <div className="mt-0 text-task font-medium leading-none text-text-primary">{scheduled}</div>
             <div className="text-meta font-mono tracking-wide text-text-secondary">items</div>
           </div>
         </div>

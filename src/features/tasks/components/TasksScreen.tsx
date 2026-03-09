@@ -221,6 +221,7 @@ function SortableTaskCard({
   const [isSwiping, setIsSwiping] = React.useState(false);
   const suppressNextToggleRef = React.useRef(false);
   const [editValue, setEditValue] = React.useState(task.title);
+  const editInputRef = React.useRef<HTMLInputElement | null>(null);
   const [touchStartX, setTouchStartX] = React.useState(0);
   const [dragX, setDragX] = React.useState(0);
   const cardRef = React.useRef<HTMLDivElement | null>(null);
@@ -230,6 +231,16 @@ function SortableTaskCard({
       setEditValue(task.title);
     }
   }, [isEditing, task.title]);
+
+  React.useEffect(() => {
+    if (!isEditing) {
+      return;
+    }
+    window.requestAnimationFrame(() => {
+      editInputRef.current?.focus();
+      editInputRef.current?.select();
+    });
+  }, [isEditing]);
 
   const openConfirmDelete = (event: React.MouseEvent) => {
     event.stopPropagation();
@@ -404,6 +415,7 @@ function SortableTaskCard({
         <button
           type="button"
           onClick={startEdit}
+          onPointerDown={(event) => event.stopPropagation()}
           disabled={!canEdit || isDeleting || isSavingEdit}
           className="pointer-events-auto min-h-[36px] rounded-lg border border-white/10 bg-white/5 px-2 text-label font-sans uppercase tracking-widest font-semibold text-text-secondary hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
         >
@@ -442,9 +454,6 @@ function SortableTaskCard({
             setDragX(0);
             return;
           }
-          if (!isEditing) {
-            onToggleTask(task.id, task.done);
-          }
         }}
       >
         <div className="grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2.5 px-3 py-2 sm:px-3.5 sm:py-2.5">
@@ -478,6 +487,7 @@ function SortableTaskCard({
           {isEditing ? (
             <div className="min-w-0 overflow-hidden rounded-md">
               <input
+                ref={editInputRef}
                 value={editValue}
                 disabled={!canEdit || isSavingEdit}
                 onChange={(event) => setEditValue(event.target.value)}
@@ -494,14 +504,23 @@ function SortableTaskCard({
                   }
                 }}
                 className="min-h-[44px] w-full bg-transparent text-task font-medium text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-                autoFocus
               />
               <div className="text-meta font-mono tracking-wide text-text-secondary">
                 {isSavingEdit ? 'Saving...' : 'Press Enter to save'}
               </div>
             </div>
           ) : (
-            <div className="min-w-0">
+            <div
+              className="min-w-0"
+              onClick={(event) => {
+                event.stopPropagation();
+                if (!canEdit || dragX !== 0) {
+                  return;
+                }
+                setIsEditing(true);
+                setEditValue(task.title);
+              }}
+            >
               <div
                 className={[
                   'block truncate text-task font-medium leading-tight',
@@ -841,25 +860,25 @@ export default function TasksScreen() {
   return (
     <div className="min-h-dvh bg-black text-text-primary overflow-x-hidden">
       <div className="mx-auto max-w-5xl px-5 pb-8 pt-6">
-        <header className="mb-6">
+        <header className="mb-5">
           {errorMessage ? (
-            <InlineNotice variant="error" className="mb-3">
+            <InlineNotice variant="error" className="mb-2">
               {errorMessage}
             </InlineNotice>
           ) : null}
           {isSavingOrder ? (
-            <InlineNotice variant="info" className="mb-3">
+            <InlineNotice variant="info" className="mb-2">
               Saving order...
             </InlineNotice>
           ) : null}
 
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
             <div>
               <SectionHeader>ACTIVE SESSION</SectionHeader>
 
-              <div className="mt-1.5">
-                <div className="flex items-end justify-center gap-3">
-                  <OppMark size={48} />
+              <div className="mt-0.5">
+                <div className="flex items-end justify-center gap-2">
+                  <OppMark size={42} />
                 </div>
                 {isEditingTitle ? (
                   <input
@@ -875,7 +894,7 @@ export default function TasksScreen() {
                       }
                     }}
                     className={[
-                      'mt-1.5 w-full bg-transparent text-center text-title font-sans uppercase tracking-tight font-bold text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black',
+                      'mt-1 w-full bg-transparent text-center text-title font-sans uppercase tracking-tight font-bold text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black',
                       canEdit ? 'opacity-100' : 'opacity-70',
                     ].join(' ')}
                   />
@@ -888,7 +907,7 @@ export default function TasksScreen() {
                       setTitleEdit(activeTitle);
                     }}
                     className={[
-                      'mt-1.5 w-full text-center text-title font-sans uppercase tracking-tight font-bold text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black',
+                      'mt-1 w-full text-center text-title font-sans uppercase tracking-tight font-bold text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black',
                       canEdit ? 'opacity-100 hover:text-text-accent' : 'opacity-70',
                     ].join(' ')}
                   >
@@ -897,23 +916,21 @@ export default function TasksScreen() {
                 )}
               </div>
 
-              <div className="mt-1.5 flex flex-col items-center gap-1.5">
-                <div className="flex flex-wrap items-center justify-center gap-3 text-meta font-mono tracking-wide text-text-secondary">
-                  <div className="rounded-full border border-white/10 bg-white/5 px-3 py-1">{getTodayLabel()}</div>
+              <div className="mt-1 flex flex-wrap items-center justify-center gap-2 text-meta font-mono tracking-wide text-text-secondary">
+                <div className="rounded-full border border-white/10 bg-white/5 px-3 py-1">{getTodayLabel()}</div>
 
-                  <button
-                    type="button"
-                    onClick={() => setIsLocked((value) => !value)}
-                    aria-pressed={!isLocked}
-                    aria-label={isLocked ? 'Unlock session editing' : 'Lock session editing'}
-                    className={[
-                      'rounded-full border px-3 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black',
-                      isLocked ? 'border-white/10 bg-white/5 text-text-secondary' : 'border-blue-500/40 bg-blue-500/10 text-text-accent',
-                    ].join(' ')}
-                  >
-                    {isLocked ? 'LOCKED' : 'UNLOCKED'}
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsLocked((value) => !value)}
+                  aria-pressed={!isLocked}
+                  aria-label={isLocked ? 'Unlock session editing' : 'Lock session editing'}
+                  className={[
+                    'rounded-full border px-3 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black',
+                    isLocked ? 'border-white/10 bg-white/5 text-text-secondary' : 'border-blue-500/40 bg-blue-500/10 text-text-accent',
+                  ].join(' ')}
+                >
+                  {isLocked ? 'LOCKED' : 'UNLOCKED'}
+                </button>
 
                 <div
                   className={[
@@ -929,7 +946,7 @@ export default function TasksScreen() {
                 </div>
               </div>
 
-              <div className="mt-1.5 text-meta font-mono tracking-wide text-text-secondary">
+              <div className="mt-1 text-meta font-mono tracking-wide text-text-secondary">
                 {total} tasks | {high} high priority | {scheduled} scheduled
               </div>
 
@@ -947,19 +964,19 @@ export default function TasksScreen() {
           </div>
 
           {newSessionError ? (
-            <InlineNotice variant="error" className="mt-3">
+            <InlineNotice variant="error" className="mt-2">
               New Session failed: {newSessionError}
             </InlineNotice>
           ) : null}
 
           {orderSavedToast ? (
-            <InlineNotice variant="success" className="mt-3">
+            <InlineNotice variant="success" className="mt-2">
               Order saved
             </InlineNotice>
           ) : null}
         </header>
 
-        <div className={['grid gap-4', isScheduleOpen ? 'md:grid-cols-[208px_1fr]' : 'md:grid-cols-1'].join(' ')}>
+        <div className={['grid gap-3.5', isScheduleOpen ? 'md:grid-cols-[208px_1fr]' : 'md:grid-cols-1'].join(' ')}>
           {isScheduleOpen ? (
             <ScheduleRail
               currentHour={currentHour}
@@ -971,173 +988,49 @@ export default function TasksScreen() {
           ) : null}
 
           <Card className={['order-1 rounded-3xl', isScheduleOpen ? 'md:order-2' : 'md:order-1'].join(' ')}>
-            <div className="mb-3">
-              <SectionHeader>WORK STACK</SectionHeader>
-
-              <form
-                action={async (formData) => {
-                  if (!activeListId || !newTaskText.trim()) {
-                    return;
-                  }
-
-                  try {
-                    setIsAddingTask(true);
-                    setAddTaskError(null);
-                    formData.set('list_id', activeListId);
-                    formData.set('content', withPriorityTag(newTaskText, selectedPriority));
-                    await createTaskAction(formData);
-                    setNewTaskText('');
-                    await reloadActiveTasks();
-                    newTaskInputRef.current?.focus();
-                  } catch (error) {
-                    const message = error instanceof Error ? error.message : 'Could not create task';
-                    setAddTaskError(
-                      process.env.NODE_ENV === 'development'
-                        ? `[E-TS-CREATETASK] ${message}`
-                        : 'Could not create task. (E-TS-CREATETASK)',
-                    );
-                  } finally {
-                    setIsAddingTask(false);
-                  }
-                }}
-                className="mt-1.5 flex items-center gap-2 rounded-xl border border-white/10 bg-black/20 p-1.5"
-              >
-                <input type="hidden" name="list_id" value={activeListId ?? ''} />
-                <input type="hidden" name="content" value={withPriorityTag(newTaskText, selectedPriority)} />
-                <input type="hidden" name="priority" value={selectedPriority} />
-                <Input
-                  ref={newTaskInputRef}
-                  value={newTaskText}
-                  disabled={!canEdit}
-                  onChange={(event) => {
-                    setNewTaskText(event.target.value);
-                    if (addTaskError) {
-                      setAddTaskError(null);
-                    }
-                  }}
-                  placeholder="Quick add task..."
-                  className="min-h-[40px] flex-1 rounded-lg border border-white/10 bg-black/30 px-3"
-                />
-                <button
-                  type="submit"
-                  disabled={!canEdit || !newTaskText.trim() || isAddingTask}
-                  className={[
-                    'inline-flex min-h-[40px] min-w-[40px] shrink-0 items-center justify-center rounded-lg border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black',
-                    canEdit
-                      ? 'border-[color:var(--state-active)]/40 bg-blue-500/10 text-text-accent hover:bg-blue-500/20'
-                      : 'border-white/10 bg-white/5 text-text-tertiary',
-                  ].join(' ')}
-                  aria-label={isAddingTask ? 'Adding task' : 'Add task'}
-                >
-                  {isAddingTask ? '...' : <Plus size={16} />}
-                </button>
-              </form>
-
-              <div className="mt-1 flex flex-wrap items-center gap-1.5 border-t border-white/5 pt-1.5">
-                {(['high', 'normal', 'low'] as Priority[]).map((priority) => (
-                  <button
-                    key={priority}
-                    type="button"
-                    disabled={!canEdit}
-                    onClick={() => setSelectedPriority(priority)}
-                    aria-pressed={selectedPriority === priority}
-                    aria-label={`Set priority to ${priority}`}
-                    className={[
-                      'min-h-[34px] rounded-full border px-2.5 py-1 text-label font-sans uppercase tracking-widest font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black',
-                      selectedPriority === priority
-                        ? priority === 'high'
-                          ? 'border-[color:var(--priority-high)]/60 text-[color:var(--priority-high)] bg-red-500/10'
-                          : priority === 'low'
-                            ? 'border-[color:var(--priority-low)]/60 text-[color:var(--priority-low)] bg-white/10'
-                            : 'border-[color:var(--priority-normal)]/60 text-[color:var(--priority-normal)] bg-blue-500/10'
-                        : 'border-white/10 text-text-tertiary hover:text-text-secondary',
-                    ].join(' ')}
-                  >
-                    {priority}
-                  </button>
-                ))}
-              </div>
-
-              {addTaskError ? (
-                <InlineNotice variant="error" className="mt-2">
-                  {addTaskError}
-                </InlineNotice>
-              ) : null}
-            </div>
-
-            <DndContext
-              sensors={sensors}
-              collisionDetection={closestCenter}
-              onDragStart={handleDragStart}
-              onDragEnd={(event) => {
-                void handleDragEnd(event);
-              }}
-            >
-              <SortableContext items={orderedTaskIdList} strategy={verticalListSortingStrategy}>
-                <div className="space-y-1.5">
-                  {orderedTasks.length === 0 ? (
-                    <Card tone="muted" className="p-3 text-task font-medium text-text-secondary">
-                      No tasks yet. Add your first item above.
-                    </Card>
-                  ) : null}
-
-                  {orderedTasks.map((task) => (
-                    <SortableTaskCard
-                      key={task.id}
-                      task={task}
-                      canEdit={canEdit}
-                      isActiveDrag={activeDragId === task.id}
-                      onToggleTask={(taskId, currentStatus) => {
-                        void toggleTask(taskId, currentStatus);
-                      }}
-                      onDeleteTask={deleteTask}
-                      onSaveTask={(taskId, nextText) => {
-                        void saveTaskEdit(taskId, nextText);
-                      }}
-                    />
-                  ))}
-                </div>
-              </SortableContext>
-            </DndContext>
-
-            <div className="relative mt-3 min-h-[40px] border-t border-white/5 pt-2">
-              <Button
-                variant="secondary"
-                onClick={async () => {
-                  setIsCreatingSession(true);
-                  setNewSessionError(null);
-                  try {
-                    await createNewList();
-                  } catch (error) {
-                    const message = error instanceof Error ? error.message : 'Could not create session';
-                    setNewSessionError(
-                      process.env.NODE_ENV === 'development'
-                        ? `[E-TS-NEWSESSION] ${message}`
-                        : 'Could not create session. (E-TS-NEWSESSION)',
-                    );
-                  } finally {
-                    setIsCreatingSession(false);
-                  }
-                }}
-                disabled={isCreatingSession}
-                className="absolute left-1/2 min-h-[38px] -translate-x-1/2 rounded-xl border-white/20 bg-white/15 px-3 py-2 text-text-primary hover:bg-white/20"
-              >
-                {isCreatingSession ? 'Creating...' : 'New Session'}
-              </Button>
-
-              <div ref={settingsMenuRef} className="absolute bottom-0 right-0">
+            <div className="mb-2.5">
+              <div className="flex items-center justify-between">
+                <SectionHeader>WORK STACK</SectionHeader>
+                <div ref={settingsMenuRef} className="relative">
                 <button
                   type="button"
                   onClick={() => setIsSettingsOpen((value) => !value)}
                   aria-expanded={isSettingsOpen}
                   aria-label="Open session settings"
-                  className="inline-flex min-h-[38px] min-w-[38px] items-center justify-center rounded-xl border border-white/15 bg-white/5 text-text-secondary hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+                  className="inline-flex min-h-[34px] min-w-[34px] items-center justify-center rounded-lg border border-white/10 bg-white/[0.03] text-text-tertiary hover:bg-white/5 hover:text-text-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black"
                 >
-                  <Settings size={16} />
+                  <Settings size={14} />
                 </button>
 
                 {isSettingsOpen ? (
-                  <div className="absolute bottom-full right-0 z-30 mb-2 w-56 rounded-xl border border-white/10 bg-black/95 p-1.5 shadow-[0_10px_30px_rgba(0,0,0,0.35)]">
+                  <div className="absolute right-0 top-full z-30 mt-2 w-56 rounded-xl border border-white/10 bg-black/95 p-1.5 shadow-[0_10px_30px_rgba(0,0,0,0.35)]">
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        setIsSettingsOpen(false);
+                        setIsCreatingSession(true);
+                        setNewSessionError(null);
+                        try {
+                          await createNewList();
+                        } catch (error) {
+                          const message = error instanceof Error ? error.message : 'Could not create session';
+                          setNewSessionError(
+                            process.env.NODE_ENV === 'development'
+                              ? `[E-TS-NEWSESSION] ${message}`
+                              : 'Could not create session. (E-TS-NEWSESSION)',
+                          );
+                        } finally {
+                          setIsCreatingSession(false);
+                        }
+                      }}
+                      className="flex min-h-[36px] w-full items-center gap-2 rounded-lg px-2.5 text-left text-label font-sans uppercase tracking-widest font-semibold text-text-secondary hover:bg-white/5 hover:text-text-primary"
+                    >
+                      <Plus size={14} />
+                      <span>{isCreatingSession ? 'Creating...' : 'New Session'}</span>
+                    </button>
+
+                    <div className="my-1 border-t border-white/10" />
+
                     <button
                       type="button"
                       onClick={() => {
@@ -1199,8 +1092,134 @@ export default function TasksScreen() {
                     </button>
                   </div>
                 ) : null}
+                </div>
               </div>
+
+              <form
+                action={async (formData) => {
+                  if (!activeListId || !newTaskText.trim()) {
+                    return;
+                  }
+
+                  try {
+                    setIsAddingTask(true);
+                    setAddTaskError(null);
+                    formData.set('list_id', activeListId);
+                    formData.set('content', withPriorityTag(newTaskText, selectedPriority));
+                    await createTaskAction(formData);
+                    setNewTaskText('');
+                    await reloadActiveTasks();
+                    newTaskInputRef.current?.focus();
+                  } catch (error) {
+                    const message = error instanceof Error ? error.message : 'Could not create task';
+                    setAddTaskError(
+                      process.env.NODE_ENV === 'development'
+                        ? `[E-TS-CREATETASK] ${message}`
+                        : 'Could not create task. (E-TS-CREATETASK)',
+                    );
+                  } finally {
+                    setIsAddingTask(false);
+                  }
+                }}
+                className="mt-1 flex items-center gap-2 rounded-xl border border-white/5 bg-black/10 p-1"
+              >
+                <input type="hidden" name="list_id" value={activeListId ?? ''} />
+                <input type="hidden" name="content" value={withPriorityTag(newTaskText, selectedPriority)} />
+                <input type="hidden" name="priority" value={selectedPriority} />
+                <Input
+                  ref={newTaskInputRef}
+                  value={newTaskText}
+                  disabled={!canEdit}
+                  onChange={(event) => {
+                    setNewTaskText(event.target.value);
+                    if (addTaskError) {
+                      setAddTaskError(null);
+                    }
+                  }}
+                  placeholder="Quick add task..."
+                  className="min-h-[40px] flex-1 rounded-lg bg-black/25 px-3"
+                />
+                <button
+                  type="submit"
+                  disabled={!canEdit || !newTaskText.trim() || isAddingTask}
+                  className={[
+                    'inline-flex min-h-[40px] min-w-[40px] shrink-0 items-center justify-center rounded-lg border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black',
+                    canEdit
+                      ? 'border-[color:var(--state-active)]/40 bg-blue-500/10 text-text-accent hover:bg-blue-500/20'
+                      : 'border-white/10 bg-white/5 text-text-tertiary',
+                  ].join(' ')}
+                  aria-label={isAddingTask ? 'Adding task' : 'Add task'}
+                >
+                  {isAddingTask ? '...' : <Plus size={16} />}
+                </button>
+              </form>
+
+              <div className="mt-0.5 flex flex-wrap items-center gap-1.5 border-t border-white/5 pt-1">
+                {(['high', 'normal', 'low'] as Priority[]).map((priority) => (
+                  <button
+                    key={priority}
+                    type="button"
+                    disabled={!canEdit}
+                    onClick={() => setSelectedPriority(priority)}
+                    aria-pressed={selectedPriority === priority}
+                    aria-label={`Set priority to ${priority}`}
+                    className={[
+                      'min-h-[34px] rounded-full border px-2.5 py-1 text-label font-sans uppercase tracking-widest font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black',
+                      selectedPriority === priority
+                        ? priority === 'high'
+                          ? 'border-[color:var(--priority-high)]/60 text-[color:var(--priority-high)] bg-red-500/10'
+                          : priority === 'low'
+                            ? 'border-[color:var(--priority-low)]/60 text-[color:var(--priority-low)] bg-white/10'
+                            : 'border-[color:var(--priority-normal)]/60 text-[color:var(--priority-normal)] bg-blue-500/10'
+                        : 'border-white/10 text-text-tertiary hover:text-text-secondary',
+                    ].join(' ')}
+                  >
+                    {priority}
+                  </button>
+                ))}
+              </div>
+
+              {addTaskError ? (
+                <InlineNotice variant="error" className="mt-1.5">
+                  {addTaskError}
+                </InlineNotice>
+              ) : null}
             </div>
+
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragStart={handleDragStart}
+              onDragEnd={(event) => {
+                void handleDragEnd(event);
+              }}
+            >
+              <SortableContext items={orderedTaskIdList} strategy={verticalListSortingStrategy}>
+                <div className="space-y-1">
+                  {orderedTasks.length === 0 ? (
+                    <div className="rounded-xl border border-white/5 bg-black/10 px-2.5 py-1.5 text-meta font-mono tracking-wide text-text-secondary">
+                      No tasks yet. Add your first item above.
+                    </div>
+                  ) : null}
+
+                  {orderedTasks.map((task) => (
+                    <SortableTaskCard
+                      key={task.id}
+                      task={task}
+                      canEdit={canEdit}
+                      isActiveDrag={activeDragId === task.id}
+                      onToggleTask={(taskId, currentStatus) => {
+                        void toggleTask(taskId, currentStatus);
+                      }}
+                      onDeleteTask={deleteTask}
+                      onSaveTask={(taskId, nextText) => {
+                        void saveTaskEdit(taskId, nextText);
+                      }}
+                    />
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
           </Card>
         </div>
 
