@@ -152,56 +152,6 @@
 /* ── STATS PILLS ── */
 .stats-pills {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  margin-bottom: 20px;
-}
-
-.stat-pill {
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.06em;
-  padding: 5px 12px;
-  border-radius: var(--radius-pill);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-/* 0% — neutral */
-.stat-pill.neutral {
-  border: 1px solid var(--border);
-  color: var(--text-2);
-  background: var(--surface-2);
-}
-
-/* in progress — blue */
-.stat-pill.progress {
-  border: 1px solid rgba(61,142,240,0.4);
-  color: var(--signal);
-  background: var(--signal-dim);
-}
-
-/* 100% — green */
-.stat-pill.done {
-  border: 1px solid rgba(46,204,120,0.4);
-  color: var(--green);
-  background: var(--green-dim);
-}
-
-.stat-pill-label {
-  opacity: 0.6;
-  font-size: 9px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-
-/* ── STATS PILLS ── */
-.stats-pills {
-  display: flex;
-  align-items: center;
   justify-content: center;
   gap: 8px;
   margin-bottom: 20px;
@@ -219,18 +169,21 @@
   gap: 5px;
 }
 
+/* 0% — neutral */
 .stat-pill.neutral {
   border: 1px solid var(--border);
   color: var(--text-2);
   background: var(--surface-2);
 }
 
+/* in progress — blue */
 .stat-pill.progress {
   border: 1px solid rgba(61,142,240,0.4);
   color: var(--signal);
   background: var(--signal-dim);
 }
 
+/* 100% — green */
 .stat-pill.done {
   border: 1px solid rgba(46,204,120,0.4);
   color: var(--green);
@@ -283,10 +236,9 @@
   letter-spacing: 0.04em;
   padding: 7px 14px;
   border-radius: var(--radius-pill);
-  background: var(--signal-dim);
-  color: var(--signal);
+  background: rgba(61,142,240,0.15);
   border: 1px solid rgba(61,142,240,0.4);
-  border: none;
+  color: #3D8EF0;
   cursor: pointer;
   transition: opacity 0.15s;
 }
@@ -315,7 +267,6 @@
   color: var(--signal);
   border-color: rgba(61,142,240,0.4);
 }
-
 @media (hover: none) {
   .settings-fab {
     color: var(--signal);
@@ -364,8 +315,8 @@
 /* ── PRIORITY FILTERS ── */
 .priority-filters {
   display: flex;
-  gap: 6px;
   justify-content: center;
+  gap: 6px;
 }
 
 .filter-btn {

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
@@ -7,8 +7,6 @@ import { DndContext, KeyboardSensor, MouseSensor, TouchSensor, closestCenter, us
 import { SortableContext, arrayMove, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Archive, CalendarDays, Check, Copy, Download, Plus, Settings, Trash2, User } from 'lucide-react';
-import Button from '@/components/ui/Button';
-import Card from '@/components/ui/Card';
 import Input from '@/components/ui/Input';
 import InlineNotice from '@/components/ui/InlineNotice';
 import LoadingMark from '@/components/ui/LoadingMark';
@@ -396,14 +394,14 @@ function SortableTaskCard({
             >
               Cancel
             </button>
-            <Button
-              variant="danger"
+            <button
+              type="button"
               onClick={confirmAndDelete}
               disabled={isDeleting}
-              className="min-h-[40px] shrink-0 whitespace-nowrap rounded-lg px-3"
+              className="min-h-[40px] shrink-0 whitespace-nowrap rounded-lg border border-red-500/40 bg-red-500/20 px-3 text-label font-sans uppercase tracking-widest font-semibold text-red-200 hover:bg-red-500/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black disabled:cursor-not-allowed disabled:opacity-40"
             >
               {isDeleting ? '...' : 'Delete'}
-            </Button>
+            </button>
           </div>
         </div>
       </div>
@@ -416,11 +414,10 @@ function SortableTaskCard({
       style={style}
       data-task-id={task.id}
       className={[
-        `draggable-row ${styles['task-item']} relative min-h-[56px] w-full max-w-full overflow-hidden rounded-xl border border-white/8 bg-white/[0.04]`,
+        `draggable-row ${styles['task-item']} relative min-h-[56px] w-full max-w-full overflow-hidden`,
         isDragging ? 'shadow-2xl ring-1 ring-white/10 bg-white/10' : '',
         isDragging || isActiveDrag ? 'opacity-60' : '',
-        task.done ? 'opacity-80' : '',
-        task.priority === 'high' ? 'border-l-2 border-l-red-500/60' : '',
+        task.done ? styles.done : '',
       ].join(' ')}
     >
       <div
@@ -464,7 +461,7 @@ function SortableTaskCard({
           transition: isSwiping ? 'none' : 'transform 0.18s ease-out',
           touchAction: 'pan-y',
         }}
-        className="relative z-10 min-h-[56px] w-full max-w-full rounded-xl bg-black/20 transition-transform will-change-transform touch-pan-y"
+        className="relative z-10 min-h-[56px] w-full max-w-full bg-transparent transition-transform will-change-transform touch-pan-y"
         onClick={() => {
           if (suppressNextToggleRef.current) {
             suppressNextToggleRef.current = false;
@@ -545,14 +542,13 @@ function SortableTaskCard({
               <div
                 className={[
                   `${styles['task-name']} block truncate text-task font-medium leading-tight`,
-                  task.done ? 'line-through decoration-blue-500 decoration-4 text-text-tertiary' : 'text-text-primary',
+                  task.done ? 'text-text-tertiary' : 'text-text-primary',
                 ].join(' ')}
               >
                 {task.title}
               </div>
               <div className={`${styles['task-time-row']} mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-meta font-mono tracking-wide text-text-secondary`}>
                 <span className={styles['task-time']}>{task.time ? `@ ${formatDisplayTime(task.time)}` : '-'}</span>
-                <span className="text-text-tertiary">|</span>
                 <span
                   className={
                     task.priority === 'normal'
@@ -759,7 +755,7 @@ export default function TasksScreen() {
 
   const canEdit = !isLocked;
   const currentHour = new Date().getHours();
-  const sessionStatus = total === 0 ? 'ACTIVE' : done === total ? 'COMPLETE' : 'IN PROGRESS';
+  const sessionStatus = done === total && total > 0 ? 'COMPLETE' : 'ACTIVE';
 
   const persistTaskOrder = React.useCallback(
     async (listId: string, orderedIds: string[]) => {
@@ -939,21 +935,21 @@ export default function TasksScreen() {
                     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black',
                   ].join(' ')}
                 >
-                  {isLocked ? 'LOCKED' : 'UNLOCKED'}
+                  {isLocked ? 'Locked' : 'Unlocked'}
                 </button>
 
                 <div
                   className={[
                     styles['status-pill'],
-                    sessionStatus === 'COMPLETE' ? styles.complete : '',
+                    sessionStatus === 'COMPLETE' ? styles.complete : styles.unlocked,
                   ].join(' ')}
                 >
-                  {sessionStatus}
+                  {sessionStatus === 'COMPLETE' ? 'Complete' : 'Active'}
                 </div>
               </div>
 
               <div className={styles['task-summary']}>
-                {total} tasks | {high} high priority | {scheduled} scheduled
+                {total} tasks · {high} high priority · {scheduled} scheduled
               </div>
 
               <div className={styles['stats-pills']}>
@@ -992,13 +988,13 @@ export default function TasksScreen() {
             />
           ) : null}
 
-          <Card className={['order-1 rounded-3xl', styles['work-stack'], isScheduleOpen ? 'md:order-2' : 'md:order-1'].join(' ')}>
-            <div className="mb-2.5">
+          <section className={['order-1', styles['work-stack'], isScheduleOpen ? 'md:order-2' : 'md:order-1'].join(' ')}>
+            <div>
               <div className={styles['stack-header']}>
                 <div className={styles['stack-title']}>WORK STACK</div>
                 <div className={styles['stack-actions']}>
-                  <Button
-                    variant="primary"
+                  <button
+                    type="button"
                     onClick={async () => {
                       setIsCreatingSession(true);
                       setNewSessionError(null);
@@ -1019,104 +1015,7 @@ export default function TasksScreen() {
                     className={styles['btn-new-session']}
                   >
                     {isCreatingSession ? 'Creating...' : 'New Session'}
-                  </Button>
-
-                  <div ref={settingsMenuRef} className="relative">
-                    <button
-                      type="button"
-                      onClick={() => setIsSettingsOpen((value) => !value)}
-                      aria-expanded={isSettingsOpen}
-                      aria-label="Open session settings"
-                      className="inline-flex min-h-[34px] min-w-[34px] items-center justify-center rounded-lg border border-white/10 bg-white/[0.03] text-text-tertiary hover:bg-white/5 hover:text-text-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-                    >
-                      <Settings size={14} />
-                    </button>
-
-                    {isSettingsOpen ? (
-                      <div className="absolute right-0 top-full z-30 mt-2 w-56 rounded-xl border border-white/10 bg-black/95 p-1.5 shadow-[0_10px_30px_rgba(0,0,0,0.35)]">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setIsScheduleOpen((value) => !value);
-                            setIsSettingsOpen(false);
-                          }}
-                          className="flex min-h-[36px] w-full items-center gap-2 rounded-lg px-2.5 text-left text-label font-sans uppercase tracking-widest font-semibold text-text-secondary hover:bg-white/5 hover:text-text-primary"
-                        >
-                          <CalendarDays size={14} />
-                          <span>{isScheduleOpen ? 'Hide Schedule' : 'Show Schedule'}</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setIsArchivedLogsOpen((value) => !value);
-                            setIsSettingsOpen(false);
-                          }}
-                          className="flex min-h-[36px] w-full items-center gap-2 rounded-lg px-2.5 text-left text-label font-sans uppercase tracking-widest font-semibold text-text-secondary hover:bg-white/5 hover:text-text-primary"
-                        >
-                          <Archive size={14} />
-                          <span>{isArchivedLogsOpen ? 'Hide Archived' : 'Show Archived'}</span>
-                        </button>
-
-                        <div className="my-1 border-t border-white/10" />
-
-                        <button
-                          type="button"
-                          onClick={async () => {
-                            setIsSettingsOpen(false);
-                            setNewSessionError(null);
-                            try {
-                              await duplicateActiveSession();
-                            } catch (error) {
-                              const message = error instanceof Error ? error.message : 'Could not duplicate session';
-                              setNewSessionError(
-                                process.env.NODE_ENV === 'development'
-                                  ? `[E-TS-DUPLICATE] ${message}`
-                                  : 'Could not duplicate session. (E-TS-DUPLICATE)',
-                              );
-                            }
-                          }}
-                          className="flex min-h-[36px] w-full items-center gap-2 rounded-lg px-2.5 text-left text-label font-sans uppercase tracking-widest font-semibold text-text-secondary hover:bg-white/5 hover:text-text-primary"
-                        >
-                          <Copy size={14} />
-                          <span>Duplicate</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => {
-                            exportActiveSession();
-                            setIsSettingsOpen(false);
-                          }}
-                          className="flex min-h-[36px] w-full items-center gap-2 rounded-lg px-2.5 text-left text-label font-sans uppercase tracking-widest font-semibold text-text-secondary hover:bg-white/5 hover:text-text-primary"
-                        >
-                          <Download size={14} />
-                          <span>Export</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => setIsSettingsOpen(false)}
-                          className="flex min-h-[36px] w-full items-center gap-2 rounded-lg px-2.5 text-left text-label font-sans uppercase tracking-widest font-semibold text-text-secondary hover:bg-white/5 hover:text-text-primary"
-                        >
-                          <Settings size={14} />
-                          <span>Settings</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setIsSettingsOpen(false);
-                            router.push('/settings/profile');
-                          }}
-                          className="flex min-h-[36px] w-full items-center gap-2 rounded-lg px-2.5 text-left text-label font-sans uppercase tracking-widest font-semibold text-text-secondary hover:bg-white/5 hover:text-text-primary"
-                        >
-                          <User size={14} />
-                          <span>Profile</span>
-                        </button>
-                      </div>
-                    ) : null}
-                  </div>
+                  </button>
                 </div>
               </div>
 
@@ -1226,11 +1125,7 @@ export default function TasksScreen() {
             >
               <SortableContext items={orderedTaskIdList} strategy={verticalListSortingStrategy}>
                 <div className={styles['task-list']}>
-                  {orderedTasks.length === 0 ? (
-                    <div className="rounded-xl border border-white/5 bg-black/10 px-2 py-1 text-meta font-mono tracking-wide text-text-secondary">
-                      No tasks yet. Use quick add above.
-                    </div>
-                  ) : null}
+                  {orderedTasks.length === 0 ? null : null}
 
                   {orderedTasks.map((task) => (
                     <SortableTaskCard
@@ -1250,7 +1145,7 @@ export default function TasksScreen() {
                 </div>
               </SortableContext>
             </DndContext>
-          </Card>
+          </section>
         </div>
 
         {isArchivedLogsOpen ? (
@@ -1263,7 +1158,106 @@ export default function TasksScreen() {
             onSelectList={handleArchiveSelect}
           />
         ) : null}
+
+        <div ref={settingsMenuRef}>
+          <button
+            type="button"
+            onClick={() => setIsSettingsOpen((value) => !value)}
+            aria-expanded={isSettingsOpen}
+            aria-label="Open session settings"
+            className={styles['settings-fab']}
+          >
+            <Settings size={16} />
+          </button>
+
+          {isSettingsOpen ? (
+            <div className="fixed bottom-[80px] right-[28px] z-40 w-56 rounded-xl border border-white/10 bg-black/95 p-1.5 shadow-[0_10px_30px_rgba(0,0,0,0.35)]">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsScheduleOpen((value) => !value);
+                  setIsSettingsOpen(false);
+                }}
+                className="flex min-h-[36px] w-full items-center gap-2 rounded-lg px-2.5 text-left text-label font-sans uppercase tracking-widest font-semibold text-text-secondary hover:bg-white/5 hover:text-text-primary"
+              >
+                <CalendarDays size={14} />
+                <span>{isScheduleOpen ? 'Hide Schedule' : 'Show Schedule'}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setIsArchivedLogsOpen((value) => !value);
+                  setIsSettingsOpen(false);
+                }}
+                className="flex min-h-[36px] w-full items-center gap-2 rounded-lg px-2.5 text-left text-label font-sans uppercase tracking-widest font-semibold text-text-secondary hover:bg-white/5 hover:text-text-primary"
+              >
+                <Archive size={14} />
+                <span>{isArchivedLogsOpen ? 'Hide Archived' : 'Show Archived'}</span>
+              </button>
+
+              <div className="my-1 border-t border-white/10" />
+
+              <button
+                type="button"
+                onClick={async () => {
+                  setIsSettingsOpen(false);
+                  setNewSessionError(null);
+                  try {
+                    await duplicateActiveSession();
+                  } catch (error) {
+                    const message = error instanceof Error ? error.message : 'Could not duplicate session';
+                    setNewSessionError(
+                      process.env.NODE_ENV === 'development'
+                        ? `[E-TS-DUPLICATE] ${message}`
+                        : 'Could not duplicate session. (E-TS-DUPLICATE)',
+                    );
+                  }
+                }}
+                className="flex min-h-[36px] w-full items-center gap-2 rounded-lg px-2.5 text-left text-label font-sans uppercase tracking-widest font-semibold text-text-secondary hover:bg-white/5 hover:text-text-primary"
+              >
+                <Copy size={14} />
+                <span>Duplicate</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  exportActiveSession();
+                  setIsSettingsOpen(false);
+                }}
+                className="flex min-h-[36px] w-full items-center gap-2 rounded-lg px-2.5 text-left text-label font-sans uppercase tracking-widest font-semibold text-text-secondary hover:bg-white/5 hover:text-text-primary"
+              >
+                <Download size={14} />
+                <span>Export</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsSettingsOpen(false)}
+                className="flex min-h-[36px] w-full items-center gap-2 rounded-lg px-2.5 text-left text-label font-sans uppercase tracking-widest font-semibold text-text-secondary hover:bg-white/5 hover:text-text-primary"
+              >
+                <Settings size={14} />
+                <span>Settings</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setIsSettingsOpen(false);
+                  router.push('/settings/profile');
+                }}
+                className="flex min-h-[36px] w-full items-center gap-2 rounded-lg px-2.5 text-left text-label font-sans uppercase tracking-widest font-semibold text-text-secondary hover:bg-white/5 hover:text-text-primary"
+              >
+                <User size={14} />
+                <span>Profile</span>
+              </button>
+            </div>
+          ) : null}
+        </div>
       </div>
     </div>
   );
 }
+
+

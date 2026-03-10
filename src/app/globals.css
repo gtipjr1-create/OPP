@@ -34,6 +34,23 @@
   --priority-high: #f87171;
   --priority-normal: #60a5fa;
   --priority-low: #9ca3af;
+
+  --obsidian:   #0D0D0F;
+  --surface-1:  #141416;
+  --surface-2:  #1C1C1F;
+  --surface-3:  #252528;
+  --border:     rgba(255,255,255,0.07);
+  --signal:     #3D8EF0;
+  --signal-dim: rgba(61,142,240,0.15);
+  --green:      #2ECC78;
+  --green-dim:  rgba(46,204,120,0.12);
+  --text-1:     #F4F4F5;
+  --text-2:     #9999A8;
+  --text-3:     #5A5A6A;
+  --radius-sm:  8px;
+  --radius-md:  12px;
+  --radius-lg:  18px;
+  --radius-pill: 100px;
 }
 
 @theme inline {
