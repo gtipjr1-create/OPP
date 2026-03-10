@@ -1,4 +1,4 @@
-# OPP — Organized Persistent Plans
+# OPP - Organized Persistent Plans
 
 OPP is a mobile-first productivity app for running focused daily sessions with structured tasks, priorities, and schedule visibility.
 
@@ -8,7 +8,7 @@ Live app: https://opp-psi.vercel.app
 
 ## Overview
 
-OPP is designed around a deliberate capture → prioritize → execute loop.  
+OPP is built around a deliberate capture -> prioritize -> execute loop.
 The system emphasizes interaction correctness, stability under edge cases, and predictable mobile behavior.
 
 ---
@@ -16,10 +16,41 @@ The system emphasizes interaction correctness, stability under edge cases, and p
 ## Core Product
 
 - Session-based planning workflow (active session + archived logs)
-- Task creation, inline editing, completion toggling, deletion
+- Task creation, inline editing, completion toggling, and deletion
 - Drag-and-drop task reordering with persistence
 - Session lock/unlock state handling
 - Archived session browsing (collapse/expand controls)
+- Session utilities (duplicate, export, schedule/archive toggles, profile entry)
+
+---
+
+## Active Session UI System
+
+The Active Session screen uses a dedicated CSS module at:
+
+- `src/features/tasks/components/ActiveSession.module.css`
+
+This module is wired into:
+
+- `src/features/tasks/components/TasksScreen.tsx`
+
+### Dynamic stat pill states
+
+The completion and weighted pills are dynamically styled from state:
+
+- `0%` -> `stat-pill neutral`
+- `1-99%` -> `stat-pill progress`
+- `100%` -> `stat-pill done`
+
+### Fonts for Active Session styling
+
+The Google Fonts stylesheet is linked in:
+
+- `src/app/layout.tsx`
+
+Link used:
+
+- `https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap`
 
 ---
 
@@ -36,47 +67,33 @@ The system emphasizes interaction correctness, stability under edge cases, and p
 
 - Hour rail visualization
 - Priority-based schedule dots
-  - High → red
-  - Normal → blue
-  - Low → gray
+  - High -> red
+  - Normal -> blue
+  - Low -> gray
 - Untagged tasks do not render schedule indicators
 
 ---
 
-## Interaction & UX Standards
+## Interaction and UX Standards
 
 - Mobile-first task row design
 - Swipe tray masking (no layered UI bleed-through)
-- Drag handle isolation (gesture conflict prevention)
+- Handleless long-press drag reorder when unlocked
+- Swipe and drag conflict guards
 - Inline confirm-delete flow
-- Keyboard support + focus-visible states
+- Keyboard support and focus-visible states
 - ARIA labeling and touch-target sizing
 
 ---
 
-## Reliability & Hardening
+## Reliability and Hardening
 
 - Unit tests for parsing, scheduling, and semantic logic
 - Integration tests for task workflow state behavior
 - Playwright E2E smoke tests
-- Visual regression checks (desktop + mobile task row)
 - Global error boundary
 - Centralized telemetry logging (server + client)
 - Error event IDs surfaced in UI for debugging clarity
-
----
-
-## Delivery Process
-
-- CI workflow on PR/push:
-  - `npm run lint`
-  - `npm test`
-  - `npm run test:e2e`
-- PR template
-- Release checklist
-- Definition-of-done documentation
-- Task row state matrix validation
-- Weekly cleanup ritual
 
 ---
 
@@ -95,7 +112,32 @@ The system emphasizes interaction correctness, stability under edge cases, and p
 
 ## Run Locally
 
-### 1. Install dependencies
+1. Install dependencies
 
 ```bash
 npm install
+```
+
+2. Configure environment
+
+Create `.env.local` and set required Supabase keys.
+
+3. Start development server
+
+```bash
+npm run dev
+```
+
+4. Build for production
+
+```bash
+npm run build
+```
+
+5. Run lint and tests
+
+```bash
+npm run lint
+npm test
+npm run test:e2e
+```

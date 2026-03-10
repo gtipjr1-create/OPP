@@ -6,19 +6,16 @@ import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core';
 import { DndContext, KeyboardSensor, MouseSensor, TouchSensor, closestCenter, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, arrayMove, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Archive, CalendarDays, Check, Copy, Download, GripVertical, Plus, Settings, Trash2, User } from 'lucide-react';
-import { OppMark } from '@/components/OppMark';
+import { Archive, CalendarDays, Check, Copy, Download, Plus, Settings, Trash2, User } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import Input from '@/components/ui/Input';
 import InlineNotice from '@/components/ui/InlineNotice';
 import LoadingMark from '@/components/ui/LoadingMark';
-import SectionHeader from '@/components/ui/SectionHeader';
 import ArchiveLogsPanel from './ArchiveLogsPanel';
-import MiniStatsRow from './MiniStatsRow';
 import ScheduleRail from './ScheduleRail';
-import StatsCards from './StatsCards';
 import { selectScheduleDotPriorityByHour } from '../lib/scheduleDots';
+import styles from './ActiveSession.module.css';
 
 import { createTaskAction, deleteTaskAction, reorderTaskPositionsAction } from '../actions';
 import { useTasksFeature } from '../useTasksFeature';
@@ -207,7 +204,7 @@ function SortableTaskCard({
   onDeleteTask,
   onSaveTask,
 }: SortableTaskCardProps) {
-  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } =
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: task.id, disabled: !canEdit });
 
   const style = {
@@ -225,9 +222,13 @@ function SortableTaskCard({
   const [editValue, setEditValue] = React.useState(task.title);
   const editInputRef = React.useRef<HTMLInputElement | null>(null);
   const [touchStartX, setTouchStartX] = React.useState(0);
+  const [touchStartY, setTouchStartY] = React.useState(0);
   const [dragX, setDragX] = React.useState(0);
-  const startedFromHandleRef = React.useRef(false);
+  const touchStartTimeRef = React.useRef(0);
   const cardRef = React.useRef<HTMLDivElement | null>(null);
+  const swipeX = dragX;
+  const isSwipeDisabled = isDragging || isActiveDrag;
+  const dragFromAnywhereEnabled = canEdit && !isEditing && !confirmDelete && swipeX === 0 && !isSwipeDisabled;
 
   React.useEffect(() => {
     if (!isEditing) {
@@ -281,51 +282,54 @@ function SortableTaskCard({
   };
 
   const handleTouchStart = (event: React.TouchEvent) => {
-    if (isEditing || confirmDelete || !canEdit || isDragging || isActiveDrag) {
+    if (isEditing || confirmDelete || !canEdit || isSwipeDisabled) {
       return;
     }
-    const target = event.target as HTMLElement | null;
-    startedFromHandleRef.current = !!target?.closest('.drag-handle');
-    if (startedFromHandleRef.current) {
-      return;
-    }
+    touchStartTimeRef.current = Date.now();
     setTouchStartX(event.touches[0].clientX);
+    setTouchStartY(event.touches[0].clientY);
     setIsSwiping(false);
   };
 
   const handleTouchMove = (event: React.TouchEvent) => {
-    if (isEditing || confirmDelete || !canEdit || isDragging || isActiveDrag || startedFromHandleRef.current) {
+    if (isEditing || confirmDelete || !canEdit || isSwipeDisabled) {
+      return;
+    }
+    const elapsed = Date.now() - touchStartTimeRef.current;
+    const dx = event.touches[0].clientX - touchStartX;
+    const dy = event.touches[0].clientY - touchStartY;
+    if (canEdit && elapsed > 180 && Math.abs(dx) < 10 && Math.abs(dy) < 10) {
       return;
     }
     setIsSwiping(true);
-    const diff = event.touches[0].clientX - touchStartX;
+    const diff = dx;
     const nextDrag = Math.max(-SWIPE_REVEAL_OFFSET, Math.min(0, diff));
     setDragX(nextDrag);
   };
 
   const handleTouchEnd = () => {
-    if (isEditing || confirmDelete || !canEdit || isDragging || isActiveDrag || startedFromHandleRef.current) {
-      startedFromHandleRef.current = false;
+    if (isEditing || confirmDelete || !canEdit || isSwipeDisabled) {
+      touchStartTimeRef.current = 0;
       return;
     }
     setIsSwiping(false);
     if (dragX < -SWIPE_THRESHOLD) {
       setDragX(-SWIPE_REVEAL_OFFSET);
-      startedFromHandleRef.current = false;
+      touchStartTimeRef.current = 0;
       return;
     }
     setDragX(0);
-    startedFromHandleRef.current = false;
+    touchStartTimeRef.current = 0;
   };
 
   const handleTouchCancel = () => {
-    if (isEditing || confirmDelete || !canEdit || isDragging || isActiveDrag || startedFromHandleRef.current) {
-      startedFromHandleRef.current = false;
+    if (isEditing || confirmDelete || !canEdit || isSwipeDisabled) {
+      touchStartTimeRef.current = 0;
       return;
     }
     setIsSwiping(false);
     setDragX(dragX < -SWIPE_THRESHOLD ? -SWIPE_REVEAL_OFFSET : 0);
-    startedFromHandleRef.current = false;
+    touchStartTimeRef.current = 0;
   };
 
   React.useEffect(() => {
@@ -412,7 +416,8 @@ function SortableTaskCard({
       style={style}
       data-task-id={task.id}
       className={[
-        'draggable-row relative min-h-[56px] w-full max-w-full overflow-hidden rounded-xl border border-white/8 bg-white/[0.04]',
+        `draggable-row ${styles['task-item']} relative min-h-[56px] w-full max-w-full overflow-hidden rounded-xl border border-white/8 bg-white/[0.04]`,
+        isDragging ? 'shadow-2xl ring-1 ring-white/10 bg-white/10' : '',
         isDragging || isActiveDrag ? 'opacity-60' : '',
         task.done ? 'opacity-80' : '',
         task.priority === 'high' ? 'border-l-2 border-l-red-500/60' : '',
@@ -448,6 +453,8 @@ function SortableTaskCard({
 
       <div
         ref={cardRef}
+        {...(dragFromAnywhereEnabled ? attributes : {})}
+        {...(dragFromAnywhereEnabled ? listeners : {})}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
@@ -469,7 +476,7 @@ function SortableTaskCard({
           }
         }}
       >
-        <div className="grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2.5 px-3 py-2 sm:px-3.5 sm:py-2.5">
+        <div className="grid w-full grid-cols-[auto_minmax(0,1fr)] items-center gap-2.5 px-3 py-2 sm:px-3.5 sm:py-2.5">
           <label
             className="flex min-h-[44px] min-w-[44px] items-center justify-center"
             onClick={(event) => event.stopPropagation()}
@@ -484,6 +491,7 @@ function SortableTaskCard({
             />
             <span
               className={[
+                styles['task-check'],
                 'inline-flex h-6 w-6 items-center justify-center rounded-md border transition-colors',
                 'peer-focus-visible:ring-2 peer-focus-visible:ring-[color:var(--state-active)] peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-black',
                 task.done
@@ -524,7 +532,7 @@ function SortableTaskCard({
             </div>
           ) : (
             <div
-              className="min-w-0"
+              className={`${styles['task-info']} min-w-0`}
               onClick={(event) => {
                 event.stopPropagation();
                 if (!canEdit || dragX !== 0) {
@@ -536,22 +544,20 @@ function SortableTaskCard({
             >
               <div
                 className={[
-                  'block truncate text-task font-medium leading-tight',
+                  `${styles['task-name']} block truncate text-task font-medium leading-tight`,
                   task.done ? 'line-through decoration-blue-500 decoration-4 text-text-tertiary' : 'text-text-primary',
                 ].join(' ')}
               >
                 {task.title}
               </div>
-              <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-meta font-mono tracking-wide text-text-secondary">
-                <span>{task.time ? `@ ${formatDisplayTime(task.time)}` : '-'}</span>
+              <div className={`${styles['task-time-row']} mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-meta font-mono tracking-wide text-text-secondary`}>
+                <span className={styles['task-time']}>{task.time ? `@ ${formatDisplayTime(task.time)}` : '-'}</span>
                 <span className="text-text-tertiary">|</span>
                 <span
                   className={
-                    task.priority === 'high'
-                      ? 'text-[color:var(--priority-high)]'
-                      : task.priority === 'normal'
-                        ? 'text-[color:var(--priority-normal)]'
-                        : 'text-[color:var(--priority-low)]'
+                    task.priority === 'normal'
+                      ? `${styles['task-badge']} ${styles.normal}`
+                      : `${styles['task-badge']}`
                   }
                 >
                   {task.priority.toUpperCase()}
@@ -560,23 +566,6 @@ function SortableTaskCard({
             </div>
           )}
 
-          <div className="flex min-h-[36px] min-w-[36px] items-center justify-end">
-            {isEditing ? (
-              <button
-                ref={setActivatorNodeRef}
-                type="button"
-                {...attributes}
-                {...listeners}
-                disabled={!canEdit}
-                aria-label="Drag to reorder task"
-                className="drag-handle inline-flex min-h-[36px] min-w-[36px] cursor-grab items-center justify-center rounded-lg border border-white/10 bg-white/5 p-2 text-text-secondary active:scale-95 active:cursor-grabbing touch-none select-none disabled:cursor-not-allowed disabled:opacity-40"
-                style={{ touchAction: 'none' }}
-                onClick={(event) => event.stopPropagation()}
-              >
-                <GripVertical size={14} />
-              </button>
-            ) : null}
-          </div>
         </div>
       </div>
     </div>
@@ -626,8 +615,8 @@ export default function TasksScreen() {
   const sensors = useSensors(
     useSensor(TouchSensor, {
       activationConstraint: {
-        delay: 120,
-        tolerance: 8,
+        delay: 220,
+        tolerance: 6,
       },
     }),
     useSensor(MouseSensor, {
@@ -759,6 +748,9 @@ export default function TasksScreen() {
   const pointsTotal = tasks.reduce((acc, task) => acc + weights[task.priority], 0);
   const pointsDone = tasks.reduce((acc, task) => acc + (task.done ? weights[task.priority] : 0), 0);
   const weightedPct = pointsTotal ? Math.round((pointsDone / pointsTotal) * 100) : 0;
+  const getStatPillState = (value: number) => (value <= 0 ? 'neutral' : value >= 100 ? 'done' : 'progress');
+  const completionPillState = getStatPillState(pct);
+  const weightedPillState = getStatPillState(weightedPct);
 
   const timed = scheduledTasks
     .slice()
@@ -878,7 +870,7 @@ export default function TasksScreen() {
 
   return (
     <div className="min-h-dvh bg-black text-text-primary overflow-x-hidden">
-      <div className="mx-auto max-w-5xl px-5 pb-8 pt-6">
+      <div className={styles.phone}>
         <header className="mb-4.5">
           {errorMessage ? (
             <InlineNotice variant="error" className="mb-2">
@@ -893,12 +885,10 @@ export default function TasksScreen() {
 
           <div className="flex flex-col gap-2.5 lg:flex-row lg:items-start lg:justify-between">
             <div>
-              <SectionHeader>ACTIVE SESSION</SectionHeader>
+              <div className={styles['section-label']}>ACTIVE SESSION</div>
 
-              <div className="mt-0">
-                <div className="flex items-end justify-center gap-1.5">
-                  <OppMark size={38} />
-                </div>
+              <div className={styles['session-header']}>
+                <div className={styles['pulse-dot']} aria-hidden="true" />
                 {isEditingTitle ? (
                   <input
                     value={titleEdit}
@@ -913,7 +903,7 @@ export default function TasksScreen() {
                       }
                     }}
                     className={[
-                      'mt-0.5 w-full bg-transparent text-center text-title font-sans uppercase tracking-tight font-bold text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black',
+                      `${styles['session-date']} w-full bg-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black`,
                       canEdit ? 'opacity-100' : 'opacity-70',
                     ].join(' ')}
                   />
@@ -926,7 +916,7 @@ export default function TasksScreen() {
                       setTitleEdit(activeTitle);
                     }}
                     className={[
-                      'mt-0.5 w-full text-center text-title font-sans uppercase tracking-tight font-bold text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black',
+                      `${styles['session-date']} w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black`,
                       canEdit ? 'opacity-100 hover:text-text-accent' : 'opacity-70',
                     ].join(' ')}
                   >
@@ -935,8 +925,8 @@ export default function TasksScreen() {
                 )}
               </div>
 
-              <div className="mt-0.5 flex flex-wrap items-center justify-center gap-1.5 text-meta font-mono tracking-wide text-text-secondary">
-                <div className="rounded-full border border-white/10 bg-white/5 px-3 py-1">{getTodayLabel()}</div>
+              <div className={styles['session-meta-row']}>
+                <div className={styles['meta-pill']}>{getTodayLabel()}</div>
 
                 <button
                   type="button"
@@ -944,8 +934,9 @@ export default function TasksScreen() {
                   aria-pressed={!isLocked}
                   aria-label={isLocked ? 'Unlock session editing' : 'Lock session editing'}
                   className={[
-                    'rounded-full border px-3 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black',
-                    isLocked ? 'border-white/10 bg-white/5 text-text-secondary' : 'border-blue-500/40 bg-blue-500/10 text-text-accent',
+                    styles['status-pill'],
+                    !isLocked ? styles.unlocked : '',
+                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black',
                   ].join(' ')}
                 >
                   {isLocked ? 'LOCKED' : 'UNLOCKED'}
@@ -953,41 +944,26 @@ export default function TasksScreen() {
 
                 <div
                   className={[
-                    'rounded-full border px-3 py-1 text-label font-sans uppercase tracking-widest font-semibold',
-                    sessionStatus === 'COMPLETE'
-                      ? 'border-[color:var(--state-completed)]/50 text-[color:var(--state-completed)] bg-emerald-500/10'
-                      : sessionStatus === 'IN PROGRESS'
-                        ? 'border-[color:var(--state-active)]/50 text-[color:var(--state-active)] bg-blue-500/10'
-                        : 'border-[color:var(--state-active)]/40 text-[color:var(--state-active)]/90 bg-blue-500/5',
+                    styles['status-pill'],
+                    sessionStatus === 'COMPLETE' ? styles.complete : '',
                   ].join(' ')}
                 >
                   {sessionStatus}
                 </div>
               </div>
 
-              <div className="mt-0.5 text-meta font-mono tracking-wide text-text-secondary">
+              <div className={styles['task-summary']}>
                 {total} tasks | {high} high priority | {scheduled} scheduled
               </div>
 
-              <MiniStatsRow
-                pct={pct}
-                done={done}
-                total={total}
-                weightedPct={weightedPct}
-                pointsDone={pointsDone}
-                pointsTotal={pointsTotal}
-                scheduled={scheduled}
-              />
-
-              <StatsCards
-                pct={pct}
-                done={done}
-                total={total}
-                weightedPct={weightedPct}
-                pointsDone={pointsDone}
-                pointsTotal={pointsTotal}
-                scheduled={scheduled}
-              />
+              <div className={styles['stats-pills']}>
+                <span className={[styles['stat-pill'], styles[completionPillState]].join(' ')}>
+                  {pct}% <span className={styles['stat-pill-label']}>Completion</span>
+                </span>
+                <span className={[styles['stat-pill'], styles[weightedPillState]].join(' ')}>
+                  {weightedPct}% <span className={styles['stat-pill-label']}>Weighted</span>
+                </span>
+              </div>
             </div>
 
           </div>
@@ -1016,11 +992,11 @@ export default function TasksScreen() {
             />
           ) : null}
 
-          <Card className={['order-1 rounded-3xl', isScheduleOpen ? 'md:order-2' : 'md:order-1'].join(' ')}>
+          <Card className={['order-1 rounded-3xl', styles['work-stack'], isScheduleOpen ? 'md:order-2' : 'md:order-1'].join(' ')}>
             <div className="mb-2.5">
-              <div className="flex items-center justify-between">
-                <SectionHeader>WORK STACK</SectionHeader>
-                <div className="flex items-center gap-2">
+              <div className={styles['stack-header']}>
+                <div className={styles['stack-title']}>WORK STACK</div>
+                <div className={styles['stack-actions']}>
                   <Button
                     variant="primary"
                     onClick={async () => {
@@ -1040,7 +1016,7 @@ export default function TasksScreen() {
                       }
                     }}
                     disabled={isCreatingSession}
-                    className="min-h-[34px] rounded-lg px-3 py-1.5"
+                    className={styles['btn-new-session']}
                   >
                     {isCreatingSession ? 'Creating...' : 'New Session'}
                   </Button>
@@ -1175,7 +1151,7 @@ export default function TasksScreen() {
                     setIsAddingTask(false);
                   }
                 }}
-                className="mt-1 flex items-center gap-2 rounded-xl border border-white/5 bg-black/10 p-1"
+                className={styles['quick-add']}
               >
                 <input type="hidden" name="list_id" value={activeListId ?? ''} />
                 <input type="hidden" name="content" value={withPriorityTag(newTaskText, selectedPriority)} />
@@ -1191,7 +1167,7 @@ export default function TasksScreen() {
                     }
                   }}
                   placeholder="Quick add task..."
-                  className="min-h-[40px] flex-1 rounded-lg bg-black/25 px-3"
+                  className={styles['quick-add-input']}
                   onKeyDown={(event) => {
                     if (event.key !== 'Enter') {
                       return;
@@ -1207,19 +1183,14 @@ export default function TasksScreen() {
                 <button
                   type="submit"
                   disabled={!canEdit || !newTaskText.trim() || isAddingTask}
-                  className={[
-                    'inline-flex min-h-[40px] min-w-[40px] shrink-0 items-center justify-center rounded-lg border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black',
-                    canEdit
-                      ? 'border-[color:var(--state-active)]/25 bg-blue-500/6 text-[color:var(--state-active)]/90 hover:bg-blue-500/12'
-                      : 'border-white/10 bg-white/5 text-text-tertiary',
-                  ].join(' ')}
+                  className={styles['btn-add']}
                   aria-label={isAddingTask ? 'Adding task' : 'Add task'}
                 >
                   {isAddingTask ? '...' : <Plus size={16} />}
                 </button>
               </form>
 
-              <div className="mt-0.5 flex flex-wrap items-center gap-1.5 border-t border-white/5 pt-1">
+              <div className={styles['priority-filters']}>
                 {(['high', 'normal', 'low'] as Priority[]).map((priority) => (
                   <button
                     key={priority}
@@ -1229,14 +1200,8 @@ export default function TasksScreen() {
                     aria-pressed={selectedPriority === priority}
                     aria-label={`Set priority to ${priority}`}
                     className={[
-                      'min-h-[34px] rounded-full border px-2.5 py-1 text-label font-sans uppercase tracking-widest font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black',
-                      selectedPriority === priority
-                        ? priority === 'high'
-                          ? 'border-[color:var(--priority-high)]/60 text-[color:var(--priority-high)] bg-red-500/10'
-                          : priority === 'low'
-                            ? 'border-[color:var(--priority-low)]/60 text-[color:var(--priority-low)] bg-white/10'
-                            : 'border-[color:var(--priority-normal)]/60 text-[color:var(--priority-normal)] bg-blue-500/10'
-                        : 'border-white/10 text-text-tertiary hover:text-text-secondary',
+                      styles['filter-btn'],
+                      selectedPriority === priority ? styles.active : '',
                     ].join(' ')}
                   >
                     {priority}
@@ -1260,7 +1225,7 @@ export default function TasksScreen() {
               }}
             >
               <SortableContext items={orderedTaskIdList} strategy={verticalListSortingStrategy}>
-                <div className="space-y-1">
+                <div className={styles['task-list']}>
                   {orderedTasks.length === 0 ? (
                     <div className="rounded-xl border border-white/5 bg-black/10 px-2 py-1 text-meta font-mono tracking-wide text-text-secondary">
                       No tasks yet. Use quick add above.
