@@ -1,11 +1,12 @@
 'use client';
 
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core';
 import { DndContext, KeyboardSensor, MouseSensor, TouchSensor, closestCenter, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, arrayMove, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Archive, CalendarDays, Check, Copy, Download, GripVertical, Plus, Settings, Trash2 } from 'lucide-react';
+import { Archive, CalendarDays, Check, Copy, Download, GripVertical, Plus, Settings, Trash2, User } from 'lucide-react';
 import { OppMark } from '@/components/OppMark';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
@@ -14,6 +15,7 @@ import InlineNotice from '@/components/ui/InlineNotice';
 import LoadingMark from '@/components/ui/LoadingMark';
 import SectionHeader from '@/components/ui/SectionHeader';
 import ArchiveLogsPanel from './ArchiveLogsPanel';
+import MiniStatsRow from './MiniStatsRow';
 import ScheduleRail from './ScheduleRail';
 import StatsCards from './StatsCards';
 import { selectScheduleDotPriorityByHour } from '../lib/scheduleDots';
@@ -224,6 +226,7 @@ function SortableTaskCard({
   const editInputRef = React.useRef<HTMLInputElement | null>(null);
   const [touchStartX, setTouchStartX] = React.useState(0);
   const [dragX, setDragX] = React.useState(0);
+  const startedFromHandleRef = React.useRef(false);
   const cardRef = React.useRef<HTMLDivElement | null>(null);
 
   React.useEffect(() => {
@@ -278,7 +281,12 @@ function SortableTaskCard({
   };
 
   const handleTouchStart = (event: React.TouchEvent) => {
-    if (isEditing || confirmDelete || !canEdit) {
+    if (isEditing || confirmDelete || !canEdit || isDragging || isActiveDrag) {
+      return;
+    }
+    const target = event.target as HTMLElement | null;
+    startedFromHandleRef.current = !!target?.closest('.drag-handle');
+    if (startedFromHandleRef.current) {
       return;
     }
     setTouchStartX(event.touches[0].clientX);
@@ -286,7 +294,7 @@ function SortableTaskCard({
   };
 
   const handleTouchMove = (event: React.TouchEvent) => {
-    if (isEditing || confirmDelete || !canEdit) {
+    if (isEditing || confirmDelete || !canEdit || isDragging || isActiveDrag || startedFromHandleRef.current) {
       return;
     }
     setIsSwiping(true);
@@ -296,23 +304,28 @@ function SortableTaskCard({
   };
 
   const handleTouchEnd = () => {
-    if (isEditing || confirmDelete || !canEdit) {
+    if (isEditing || confirmDelete || !canEdit || isDragging || isActiveDrag || startedFromHandleRef.current) {
+      startedFromHandleRef.current = false;
       return;
     }
     setIsSwiping(false);
     if (dragX < -SWIPE_THRESHOLD) {
       setDragX(-SWIPE_REVEAL_OFFSET);
+      startedFromHandleRef.current = false;
       return;
     }
     setDragX(0);
+    startedFromHandleRef.current = false;
   };
 
   const handleTouchCancel = () => {
-    if (isEditing || confirmDelete || !canEdit) {
+    if (isEditing || confirmDelete || !canEdit || isDragging || isActiveDrag || startedFromHandleRef.current) {
+      startedFromHandleRef.current = false;
       return;
     }
     setIsSwiping(false);
     setDragX(dragX < -SWIPE_THRESHOLD ? -SWIPE_REVEAL_OFFSET : 0);
+    startedFromHandleRef.current = false;
   };
 
   React.useEffect(() => {
@@ -571,6 +584,7 @@ function SortableTaskCard({
 }
 
 export default function TasksScreen() {
+  const router = useRouter();
   const {
     lists,
     activeListId,
@@ -758,7 +772,7 @@ export default function TasksScreen() {
   const persistTaskOrder = React.useCallback(
     async (listId: string, orderedIds: string[]) => {
       if (!listId || orderedIds.length === 0) {
-        return;
+        return false;
       }
 
       try {
@@ -768,12 +782,14 @@ export default function TasksScreen() {
         window.setTimeout(() => {
           setOrderSavedToast(false);
         }, 1400);
+        return true;
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Could not save task order';
         setAddTaskError(
           process.env.NODE_ENV === 'development' ? `[E-TS-REORDER] ${message}` : 'Could not save task order. (E-TS-REORDER)',
         );
         await reloadActiveTasks();
+        return false;
       } finally {
         setIsSavingOrder(false);
       }
@@ -827,7 +843,10 @@ export default function TasksScreen() {
         return;
       }
 
-      await persistTaskOrder(activeListId, reordered);
+      const saved = await persistTaskOrder(activeListId, reordered);
+      if (!saved) {
+        setOrderedTaskIds(previous);
+      }
     },
     [activeListId, orderedTaskIdList, persistTaskOrder],
   );
@@ -950,6 +969,16 @@ export default function TasksScreen() {
                 {total} tasks | {high} high priority | {scheduled} scheduled
               </div>
 
+              <MiniStatsRow
+                pct={pct}
+                done={done}
+                total={total}
+                weightedPct={weightedPct}
+                pointsDone={pointsDone}
+                pointsTotal={pointsTotal}
+                scheduled={scheduled}
+              />
+
               <StatsCards
                 pct={pct}
                 done={done}
@@ -991,107 +1020,127 @@ export default function TasksScreen() {
             <div className="mb-2.5">
               <div className="flex items-center justify-between">
                 <SectionHeader>WORK STACK</SectionHeader>
-                <div ref={settingsMenuRef} className="relative">
-                <button
-                  type="button"
-                  onClick={() => setIsSettingsOpen((value) => !value)}
-                  aria-expanded={isSettingsOpen}
-                  aria-label="Open session settings"
-                  className="inline-flex min-h-[34px] min-w-[34px] items-center justify-center rounded-lg border border-white/10 bg-white/[0.03] text-text-tertiary hover:bg-white/5 hover:text-text-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-                >
-                  <Settings size={14} />
-                </button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="primary"
+                    onClick={async () => {
+                      setIsCreatingSession(true);
+                      setNewSessionError(null);
+                      try {
+                        await createNewList();
+                      } catch (error) {
+                        const message = error instanceof Error ? error.message : 'Could not create session';
+                        setNewSessionError(
+                          process.env.NODE_ENV === 'development'
+                            ? `[E-TS-NEWSESSION] ${message}`
+                            : 'Could not create session. (E-TS-NEWSESSION)',
+                        );
+                      } finally {
+                        setIsCreatingSession(false);
+                      }
+                    }}
+                    disabled={isCreatingSession}
+                    className="min-h-[34px] rounded-lg px-3 py-1.5"
+                  >
+                    {isCreatingSession ? 'Creating...' : 'New Session'}
+                  </Button>
 
-                {isSettingsOpen ? (
-                  <div className="absolute right-0 top-full z-30 mt-2 w-56 rounded-xl border border-white/10 bg-black/95 p-1.5 shadow-[0_10px_30px_rgba(0,0,0,0.35)]">
+                  <div ref={settingsMenuRef} className="relative">
                     <button
                       type="button"
-                      onClick={async () => {
-                        setIsSettingsOpen(false);
-                        setIsCreatingSession(true);
-                        setNewSessionError(null);
-                        try {
-                          await createNewList();
-                        } catch (error) {
-                          const message = error instanceof Error ? error.message : 'Could not create session';
-                          setNewSessionError(
-                            process.env.NODE_ENV === 'development'
-                              ? `[E-TS-NEWSESSION] ${message}`
-                              : 'Could not create session. (E-TS-NEWSESSION)',
-                          );
-                        } finally {
-                          setIsCreatingSession(false);
-                        }
-                      }}
-                      className="flex min-h-[36px] w-full items-center gap-2 rounded-lg px-2.5 text-left text-label font-sans uppercase tracking-widest font-semibold text-text-secondary hover:bg-white/5 hover:text-text-primary"
+                      onClick={() => setIsSettingsOpen((value) => !value)}
+                      aria-expanded={isSettingsOpen}
+                      aria-label="Open session settings"
+                      className="inline-flex min-h-[34px] min-w-[34px] items-center justify-center rounded-lg border border-white/10 bg-white/[0.03] text-text-tertiary hover:bg-white/5 hover:text-text-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-black"
                     >
-                      <Plus size={14} />
-                      <span>{isCreatingSession ? 'Creating...' : 'New Session'}</span>
+                      <Settings size={14} />
                     </button>
 
-                    <div className="my-1 border-t border-white/10" />
+                    {isSettingsOpen ? (
+                      <div className="absolute right-0 top-full z-30 mt-2 w-56 rounded-xl border border-white/10 bg-black/95 p-1.5 shadow-[0_10px_30px_rgba(0,0,0,0.35)]">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsScheduleOpen((value) => !value);
+                            setIsSettingsOpen(false);
+                          }}
+                          className="flex min-h-[36px] w-full items-center gap-2 rounded-lg px-2.5 text-left text-label font-sans uppercase tracking-widest font-semibold text-text-secondary hover:bg-white/5 hover:text-text-primary"
+                        >
+                          <CalendarDays size={14} />
+                          <span>{isScheduleOpen ? 'Hide Schedule' : 'Show Schedule'}</span>
+                        </button>
 
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsScheduleOpen((value) => !value);
-                        setIsSettingsOpen(false);
-                      }}
-                      className="flex min-h-[36px] w-full items-center gap-2 rounded-lg px-2.5 text-left text-label font-sans uppercase tracking-widest font-semibold text-text-secondary hover:bg-white/5 hover:text-text-primary"
-                    >
-                      <CalendarDays size={14} />
-                      <span>{isScheduleOpen ? 'Hide Schedule' : 'Show Schedule'}</span>
-                    </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsArchivedLogsOpen((value) => !value);
+                            setIsSettingsOpen(false);
+                          }}
+                          className="flex min-h-[36px] w-full items-center gap-2 rounded-lg px-2.5 text-left text-label font-sans uppercase tracking-widest font-semibold text-text-secondary hover:bg-white/5 hover:text-text-primary"
+                        >
+                          <Archive size={14} />
+                          <span>{isArchivedLogsOpen ? 'Hide Archived' : 'Show Archived'}</span>
+                        </button>
 
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsArchivedLogsOpen((value) => !value);
-                        setIsSettingsOpen(false);
-                      }}
-                      className="flex min-h-[36px] w-full items-center gap-2 rounded-lg px-2.5 text-left text-label font-sans uppercase tracking-widest font-semibold text-text-secondary hover:bg-white/5 hover:text-text-primary"
-                    >
-                      <Archive size={14} />
-                      <span>{isArchivedLogsOpen ? 'Hide Archived' : 'Show Archived'}</span>
-                    </button>
+                        <div className="my-1 border-t border-white/10" />
 
-                    <div className="my-1 border-t border-white/10" />
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            setIsSettingsOpen(false);
+                            setNewSessionError(null);
+                            try {
+                              await duplicateActiveSession();
+                            } catch (error) {
+                              const message = error instanceof Error ? error.message : 'Could not duplicate session';
+                              setNewSessionError(
+                                process.env.NODE_ENV === 'development'
+                                  ? `[E-TS-DUPLICATE] ${message}`
+                                  : 'Could not duplicate session. (E-TS-DUPLICATE)',
+                              );
+                            }
+                          }}
+                          className="flex min-h-[36px] w-full items-center gap-2 rounded-lg px-2.5 text-left text-label font-sans uppercase tracking-widest font-semibold text-text-secondary hover:bg-white/5 hover:text-text-primary"
+                        >
+                          <Copy size={14} />
+                          <span>Duplicate</span>
+                        </button>
 
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        setIsSettingsOpen(false);
-                        setNewSessionError(null);
-                        try {
-                          await duplicateActiveSession();
-                        } catch (error) {
-                          const message = error instanceof Error ? error.message : 'Could not duplicate session';
-                          setNewSessionError(
-                            process.env.NODE_ENV === 'development'
-                              ? `[E-TS-DUPLICATE] ${message}`
-                              : 'Could not duplicate session. (E-TS-DUPLICATE)',
-                          );
-                        }
-                      }}
-                      className="flex min-h-[36px] w-full items-center gap-2 rounded-lg px-2.5 text-left text-label font-sans uppercase tracking-widest font-semibold text-text-secondary hover:bg-white/5 hover:text-text-primary"
-                    >
-                      <Copy size={14} />
-                      <span>Duplicate</span>
-                    </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            exportActiveSession();
+                            setIsSettingsOpen(false);
+                          }}
+                          className="flex min-h-[36px] w-full items-center gap-2 rounded-lg px-2.5 text-left text-label font-sans uppercase tracking-widest font-semibold text-text-secondary hover:bg-white/5 hover:text-text-primary"
+                        >
+                          <Download size={14} />
+                          <span>Export</span>
+                        </button>
 
-                    <button
-                      type="button"
-                      onClick={() => {
-                        exportActiveSession();
-                        setIsSettingsOpen(false);
-                      }}
-                      className="flex min-h-[36px] w-full items-center gap-2 rounded-lg px-2.5 text-left text-label font-sans uppercase tracking-widest font-semibold text-text-secondary hover:bg-white/5 hover:text-text-primary"
-                    >
-                      <Download size={14} />
-                      <span>Export</span>
-                    </button>
+                        <button
+                          type="button"
+                          onClick={() => setIsSettingsOpen(false)}
+                          className="flex min-h-[36px] w-full items-center gap-2 rounded-lg px-2.5 text-left text-label font-sans uppercase tracking-widest font-semibold text-text-secondary hover:bg-white/5 hover:text-text-primary"
+                        >
+                          <Settings size={14} />
+                          <span>Settings</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsSettingsOpen(false);
+                            router.push('/settings/profile');
+                          }}
+                          className="flex min-h-[36px] w-full items-center gap-2 rounded-lg px-2.5 text-left text-label font-sans uppercase tracking-widest font-semibold text-text-secondary hover:bg-white/5 hover:text-text-primary"
+                        >
+                          <User size={14} />
+                          <span>Profile</span>
+                        </button>
+                      </div>
+                    ) : null}
                   </div>
-                ) : null}
                 </div>
               </div>
 
@@ -1109,7 +1158,12 @@ export default function TasksScreen() {
                     await createTaskAction(formData);
                     setNewTaskText('');
                     await reloadActiveTasks();
-                    newTaskInputRef.current?.focus();
+                    const isDesktop = window.matchMedia('(min-width: 768px)').matches;
+                    if (isDesktop) {
+                      newTaskInputRef.current?.focus();
+                    } else {
+                      newTaskInputRef.current?.blur();
+                    }
                   } catch (error) {
                     const message = error instanceof Error ? error.message : 'Could not create task';
                     setAddTaskError(
@@ -1138,6 +1192,17 @@ export default function TasksScreen() {
                   }}
                   placeholder="Quick add task..."
                   className="min-h-[40px] flex-1 rounded-lg bg-black/25 px-3"
+                  onKeyDown={(event) => {
+                    if (event.key !== 'Enter') {
+                      return;
+                    }
+                    const isDesktop = window.matchMedia('(min-width: 768px)').matches;
+                    if (!isDesktop) {
+                      return;
+                    }
+                    event.preventDefault();
+                    event.currentTarget.form?.requestSubmit();
+                  }}
                 />
                 <button
                   type="submit"

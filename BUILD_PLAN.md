@@ -1,129 +1,130 @@
-# OPP — Next Session Phases
-## Post-Phase-10 Refinement Pass
+# OPP — Build Plan
 
-### Objective
-Build on the stronger mobile command-surface direction by tightening top-of-screen hierarchy, refining Work Stack empty-state behavior, and continuing the shift from visual compression into more stable real-use testing.
-
----
-
-## Phase 11 — Micro-compress the top session stack
-**Goal:** Tighten the top area so it reaches action faster without losing identity.
-
-### Implement
-- Reduce vertical spacing between:
-  - section label and icon
-  - icon and date title
-  - title and pill row
-  - pill row and meta line
-  - meta line and summary strip
-- Keep the top visually premium, but less ceremonious
-- Preserve readability while making the whole header stack feel tighter on mobile
-
-### Deliverable
-A more compact session header that gets the user into Work Stack faster.
+OPP is actively evolving through phased quality milestones.
+Primary standard: smooth, fast, responsive, clean.
+Feature growth only when stability is proven in daily use.
 
 ---
 
-## Phase 12 — Refine icon footprint and title balance
-**Goal:** Keep identity at the top of the page while reducing unnecessary visual weight.
+## Phase 0 — Baseline Stability (now)
+**Goal:** keep core loop rock solid (auth + tasks).
 
-### Implement
-- Slightly reduce the central icon size, or keep size and reduce surrounding margin
-- Ensure the date title remains the primary anchor of the top section
-- Rebalance icon-to-title spacing so the icon supports the header instead of dominating it
+- ✅ Supabase SSR auth stable (Next 16 proxy + cookies adapter)
+- ✅ Mobile swipe tray stabilized (no overlay, controlled swipe)
 
-### Deliverable
-A cleaner top anchor with stronger hierarchy and less wasted vertical space.
-
----
-
-## Phase 13 — Tighten summary strip shell and stat internals
-**Goal:** Make the stats area feel like a compact operational readout instead of a secondary hero block.
-
-### Implement
-- Reduce outer shell padding around the stat strip
-- Slightly reduce stat-card height if safe for readability
-- Tighten label/value/subvalue spacing inside each stat card
-- Keep the 3-up structure, but make it feel denser and calmer
-
-### Deliverable
-A slimmer summary strip with better scan speed and less visual mass.
+Exit criteria:
+- production build is green
+- login persists across refresh
+- mobile task list feels predictable
 
 ---
 
-## Phase 14 — Sharpen Work Stack empty state
-**Goal:** Make the empty state helpful without letting it become another oversized content block.
+## Phase 1 — Mobile “One Screen” Layout (Option A)
+**Goal:** Work Stack becomes first-class on mobile with minimal scroll.
 
-### Implement
-- Slightly reduce empty-state height
-- Refine empty-state copy if needed so it stays clear and minimal
-- Keep the message supportive, but lighter in visual presence
-- Ensure the empty-state panel fits the cleaner, utility-first direction of the section
+Changes:
+- On `<md`:
+  - slim header (title + lock + status)
+  - **MiniStatsRow** replaces full StatsCards
+  - Work Stack appears before schedule/archive
+  - schedule + archive collapsed by default
+- On `md+`: keep current grid layout unchanged
 
-### Deliverable
-A more disciplined empty state that supports first use without bloating the card.
-
----
-
-## Phase 15 — Review plus-button visual dominance
-**Goal:** Make sure the quick-add action feels strong without overpowering the input row.
-
-### Implement
-- Assess whether the plus button is slightly too visually dominant
-- If needed, reduce shell weight, fill intensity, or border emphasis
-- Keep tap confidence high while bringing it into better balance with the input field
-
-### Deliverable
-A quick-add action that feels clear, usable, and integrated with the Work Stack composer.
+Exit criteria:
+- iPhone: Work Stack visible with minimal scroll
+- no loss of clarity for session status
 
 ---
 
-## Phase 16 — Stabilize current layout for self-testing
-**Goal:** Pause major redesigning long enough to observe real usage honestly.
+## Phase 2 — Reorder Reliability
+**Goal:** drag is dependable and never conflicts with swipe.
 
-### Implement
-- Freeze the current layout direction for a short testing window
-- Use the page repeatedly in normal workflow
-- Record friction points such as:
-  - hesitation
-  - missed taps
-  - awkward scroll moments
-  - controls that feel unclear
-  - elements that get ignored
-- Avoid redesigning every small thing immediately during the observation period
+Changes:
+- Drag starts only from handle
+- Swipe must not capture touches that begin on the drag handle
+- If drag active → swipe disabled (already partially true)
 
-### Deliverable
-A cleaner evidence base for the next round of changes.
+Exit criteria:
+- iPhone: handle drag always works
+- swipe still works from the row body
+- no “dead zones” or accidental gestures
 
 ---
 
-## Phase 17 — Convert observations into a behavior-based polish pass
-**Goal:** Let real usage guide the next layer of refinement.
+## Phase 3 — Keyboard + Focus Polish
+**Goal:** fast task entry across desktop + mobile.
 
-### Implement
-- Review self-testing notes
-- Separate issues into:
-  - hierarchy problems
-  - interaction problems
-  - spacing problems
-  - visual polish opportunities
-- Prioritize actual friction over hypothetical tweaks
-- Use the findings to define the next focused pass instead of reopening broad redesign mode
+Changes:
+- Desktop: Enter submits “Add task”
+- Mobile: after submit, focus behavior is intentional (no surprise keyboard pop)
+- Keep error reset + clear feedback when blocked
 
-### Deliverable
-A more grounded next-phase roadmap based on use, not just instinct.
+Exit criteria:
+- can add 5 tasks quickly without friction
 
 ---
 
-## Suggested Build Order
+## Phase 4 — Latency Masking + Reliability UX
+**Goal:** UI feels instant, errors are readable.
 
-### Track A — Immediate UI tightening
-1. Phase 11 — Micro-compress the top session stack
-2. Phase 12 — Refine icon footprint and title balance
-3. Phase 13 — Tighten summary strip shell and stat internals
-4. Phase 14 — Sharpen Work Stack empty state
-5. Phase 15 — Review plus-button visual dominance
+Changes:
+- Optimistic toggle done (instant checkbox + strike-through)
+- Optimistic reorder hardening (UI updates immediately, rollback on failure)
+- Inline errors with short event IDs (E-TS-XXXX)
 
-### Track B — Maturity / validation
-6. Phase 16 — Stabilize current layout for self-testing
-7. Phase 17 — Convert observations into a behavior-based polish pass
+Exit criteria:
+- most actions feel immediate even on slow network
+- errors are actionable, not vague
+
+---
+
+## Phase 5 — Settings Entry Point (Cog) + Action Consolidation
+**Goal:** remove header clutter and create a home for future actions.
+
+Changes:
+- Add Settings cog dropdown:
+  - Duplicate session
+  - Export
+  - Settings
+  - Profile (placeholder)
+- Keep New Session as primary CTA
+
+Exit criteria:
+- header is cleaner
+- future actions have a stable home
+
+---
+
+## Phase 6 — Profile Basics (when needed)
+**Goal:** minimal account identity without scope creep.
+
+Changes:
+- `/settings/profile` page
+- `profiles` table (user_id, display_name, avatar_url)
+- optional avatar upload (Supabase storage)
+
+Exit criteria:
+- user can set a name + avatar
+- no multi-profile switching yet
+
+---
+
+## Phase 7 — PWA Install Polish (lightweight)
+**Goal:** home-screen install feels native.
+
+Changes:
+- manifest + icons (done)
+- verify iOS apple-touch-icon
+- verify standalone display mode
+
+Exit criteria:
+- iPhone “Add to Home Screen” shows correct icon
+- launches as standalone
+
+---
+
+## Guardrails
+- No large new features until Phase 1–4 are stable.
+- Prefer full-file replacements.
+- Keep the system calm: fewer controls, clearer hierarchy.
+- Any gesture system must be deterministic (no overlapping hit regions).

@@ -21,34 +21,7 @@ export default function StatsCards({
   scheduled,
 }: StatsCardsProps) {
   return (
-    <div className="mt-2.5">
-      <Card className="p-1.5 md:hidden">
-        <div className="grid grid-cols-3 gap-0.5">
-          <div className="rounded-lg border border-white/5 bg-black/20 px-1.5 py-0.5">
-            <SectionHeader className="text-[0.55rem]">COMPLETION</SectionHeader>
-            <div className="text-task font-medium leading-none text-text-primary">{pct}%</div>
-            <div className="text-meta font-mono tracking-wide text-text-secondary">
-              {done}/{total}
-            </div>
-          </div>
-
-          <div className="rounded-lg border border-white/5 bg-black/20 px-1.5 py-0.5">
-            <SectionHeader className="text-[0.55rem]">WEIGHTED</SectionHeader>
-            <div className="text-task font-medium leading-none text-text-primary">{weightedPct}%</div>
-            <div className="text-meta font-mono tracking-wide text-text-secondary">
-              {pointsDone}/{pointsTotal}
-            </div>
-          </div>
-
-          <div className="rounded-lg border border-white/5 bg-black/20 px-1.5 py-0.5">
-            <SectionHeader className="text-[0.55rem]">SCHEDULED</SectionHeader>
-            <div className="text-task font-medium leading-none text-text-primary">{scheduled}</div>
-            <div className="text-meta font-mono tracking-wide text-text-secondary">items</div>
-          </div>
-        </div>
-      </Card>
-
-      <div className="hidden gap-3 md:grid md:grid-cols-3">
+    <div className="hidden gap-3 md:grid md:grid-cols-3">
         <Card>
           <SectionHeader>COMPLETION</SectionHeader>
           <div className="mt-1 flex items-baseline justify-between">
@@ -85,7 +58,6 @@ export default function StatsCards({
             Only tasks with a time appear on the rail.
           </div>
         </Card>
-      </div>
     </div>
   );
 }

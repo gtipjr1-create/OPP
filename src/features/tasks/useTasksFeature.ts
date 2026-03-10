@@ -290,9 +290,27 @@ export function useTasksFeature() {
       return;
     }
 
+    const nextStatus = !currentStatus;
+
+    // Optimistic UI: update immediately, rollback on failure.
+    setTasks((previous) => applyToggleToTasks(previous, taskId, nextStatus));
+    setListStatsById((previous) => {
+      const current = previous[activeListId];
+      if (!current) {
+        return previous;
+      }
+      return {
+        ...previous,
+        [activeListId]: applyToggleToStats(current, nextStatus, new Date().toISOString()),
+      };
+    });
+
     try {
-      await setTaskDone(taskId, !currentStatus);
-      setTasks((previous) => applyToggleToTasks(previous, taskId, !currentStatus));
+      await setTaskDone(taskId, nextStatus);
+      setErrorMessage(null);
+    } catch (error) {
+      // Rollback optimistic toggle on failure.
+      setTasks((previous) => applyToggleToTasks(previous, taskId, currentStatus));
       setListStatsById((previous) => {
         const current = previous[activeListId];
         if (!current) {
@@ -300,15 +318,13 @@ export function useTasksFeature() {
         }
         return {
           ...previous,
-          [activeListId]: applyToggleToStats(current, !currentStatus, new Date().toISOString()),
+          [activeListId]: applyToggleToStats(current, currentStatus, new Date().toISOString()),
         };
       });
-      setErrorMessage(null);
-    } catch (error) {
       handleClientFailure('tasks.toggle_failed', 'Failed to toggle task.', error, {
         activeListId,
         taskId,
-        nextStatus: !currentStatus,
+        nextStatus,
       });
     }
   }, [activeListId, handleClientFailure]);

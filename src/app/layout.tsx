@@ -19,10 +19,12 @@ export const metadata: Metadata = {
   title: APP_TITLE,
   description: APP_DESCRIPTION,
   themeColor: '#000000',
+  manifest: '/manifest.webmanifest',
   icons: {
     icon: [
       { url: '/icons/favicon-32.png', sizes: '32x32' },
       { url: '/icons/icon-192.png', sizes: '192x192' },
+      { url: '/icons/icon-512.png', sizes: '512x512' },
     ],
     apple: '/icons/apple-touch-icon.png',
   },
@@ -43,6 +45,7 @@ export default function RootLayout({
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
         <link rel="manifest" href="/manifest.webmanifest" />
+        <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         {children}

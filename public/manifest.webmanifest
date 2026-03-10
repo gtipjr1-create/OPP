@@ -2,6 +2,8 @@
   "name": "OPP — Organized Persistent Plans",
   "short_name": "OPP",
   "description": "Your daily session planning system.",
+  "id": "/",
+  "scope": "/",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#000000",
